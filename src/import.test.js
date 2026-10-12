@@ -22,7 +22,8 @@ test("all supplied event files parse and use canonical display categories", asyn
     ["flow-2026-2-results.json", "Summer"],
     ["flow-2026-3-results.json", "Autumn"],
   ]) {
-    const upload = parseUpload(JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8")));
+    const source = JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
+    const upload = parseUpload(source);
     assert.equal(upload.year, 2026);
     assert.equal(upload.season, season);
     assert.ok(upload.rows.length > 0);
@@ -30,5 +31,12 @@ test("all supplied event files parse and use canonical display categories", asyn
       "Hobbi - Férfi", "Hobbi - Női", "Kezdő - Férfi", "Kezdő - Női",
       "Nyílt - Férfi", "Nyílt - Női", "Senior - Férfi", "Senior - Női",
     ].includes(row.category)));
+    assert.equal(upload.rows[0].score_hundredths, scoreToHundredths(source.ranking[0].score));
+    if (season === "Autumn") {
+      const index = source.ranking.findIndex((row) => row.custom_participant_fields.some((field) => field.value === "Kezdő -Férfi"));
+      assert.notEqual(index, -1);
+      assert.equal(upload.rows[index].source_category, "Kezdő -Férfi");
+      assert.equal(upload.rows[index].category, "Kezdő - Férfi");
+    }
   }
 });

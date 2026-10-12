@@ -14,7 +14,7 @@ One row per Flow Seasons event slot for the year.
 - Unique slot: `(year, season)`.
 
 ### `imports`
-One append-only row per **accepted** JSON upload. Rejected uploads remain archived in R2 but do not get an `imports` row. Missing or invalid source identifiers use a fallback R2 key, `raw-results/unidentified-{YYYYMMDDTHHMMSSZ}.json`.
+One append-only row per **accepted** JSON upload. Rejected uploads remain archived in R2 but do not get an `imports` row. Missing or invalid source identifiers use a fallback R2 key, `raw-results/unidentified-{YYYYMMDDTHHMMSSZ}-{upload-hash}.json`.
 
 - `import_id` — internal primary key.
 - `event_pk` — Flow event this upload belongs to.
