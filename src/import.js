@@ -1,4 +1,5 @@
 const YEAR = 2026;
+const MAX_BIND_PARAMS = 100;
 const CATEGORIES = new Map([
   ["hobbi-ferfi", "Hobbi - Férfi"],
   ["hobbi-noi", "Hobbi - Női"],
@@ -16,6 +17,10 @@ export function normalizeCategory(value) {
     .replace(/\p{M}/gu, "")
     .toLowerCase()
     .replace(/\s+/gu, "");
+}
+
+export function canonicalCategory(value) {
+  return typeof value === "string" ? CATEGORIES.get(normalizeCategory(value)) ?? null : null;
 }
 
 function identifier(value) {
@@ -101,7 +106,7 @@ export function parseUpload(payload) {
       lastname: typeof entry.lastname === "string" ? entry.lastname : null,
       rank,
       source_category: sourceCategory,
-      category: CATEGORIES.get(normalizeCategory(sourceCategory)),
+      category: canonicalCategory(sourceCategory),
       score_hundredths: scoreToHundredths(entry.score),
     };
   });
@@ -157,7 +162,7 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
     "SELECT event_pk FROM imports WHERE event_id = ? AND id = ? LIMIT 1",
   ).bind(upload.event_id, upload.id).first();
   const slot = await env.DB.prepare(
-    "SELECT event_pk FROM events WHERE year = ? AND season = ?",
+    "SELECT event_pk, current_import_id FROM events WHERE year = ? AND season = ?",
   ).bind(upload.year, upload.season).first();
 
   if (known && (!slot || known.event_pk !== slot.event_pk)) {
@@ -165,6 +170,12 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
   }
   if (!known && slot) throw new Error("event season slot is already occupied by another source result set");
 
+  const eventPk = slot?.event_pk ?? (await env.DB.prepare(
+    "SELECT COALESCE(MAX(event_pk), 0) + 1 AS next_id FROM events",
+  ).first()).next_id;
+  const importId = (await env.DB.prepare(
+    "SELECT COALESCE(MAX(import_id), 0) + 1 AS next_id FROM imports",
+  ).first()).next_id;
   const athleteIds = [...new Set(upload.rows.map((row) => row.athlete_id).filter(Boolean))];
   const existingLinks = athleteIds.length
     ? await env.DB.prepare('SELECT athlete_id, flow_id FROM "athlete-linking"').all()
@@ -179,22 +190,22 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
     if (row.athlete_id) categoryByFlow.set(flowByAthlete.get(row.athlete_id), row.category);
   }
 
-  const statements = [
-    env.DB.prepare("INSERT OR IGNORE INTO events (year, season) VALUES (?, ?)")
-      .bind(upload.year, upload.season),
-    env.DB.prepare(`
-      DELETE FROM event_results
-      WHERE import_id = (
-        SELECT current_import_id FROM events WHERE year = ? AND season = ?
-      )
-    `).bind(upload.year, upload.season),
-    env.DB.prepare(`
-      INSERT INTO imports (event_pk, event_id, id, r2_key, status, accepted_at)
-      SELECT event_pk, ?, ?, ?, ?, ? FROM events WHERE year = ? AND season = ?
-    `).bind(upload.event_id, upload.id, r2Key, upload.status, new Date().toISOString(), upload.year, upload.season),
-  ];
+  const statements = [];
+  if (!slot) {
+    statements.push(env.DB.prepare(
+      "INSERT INTO events (event_pk, year, season) VALUES (?, ?, ?)",
+    ).bind(eventPk, upload.year, upload.season));
+  }
+  if (slot?.current_import_id != null) {
+    statements.push(env.DB.prepare("DELETE FROM event_results WHERE import_id = ?")
+      .bind(slot.current_import_id));
+  }
+  statements.push(env.DB.prepare(`
+    INSERT INTO imports (import_id, event_pk, event_id, id, r2_key, status, accepted_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(importId, eventPk, upload.event_id, upload.id, r2Key, upload.status, new Date().toISOString()));
 
-  for (const group of chunks(athleteIds, 400)) {
+  for (const group of chunks(athleteIds, MAX_BIND_PARAMS / 2)) {
     const placeholders = group.map(() => "(?, ?)").join(",");
     const values = group.flatMap((athleteId) => [athleteId, flowByAthlete.get(athleteId)]);
     statements.push(env.DB.prepare(`
@@ -202,9 +213,9 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
     `).bind(...values));
   }
 
-  for (const group of chunks(upload.rows, 100)) {
-    const placeholders = group.map(() => "(SELECT import_id FROM imports WHERE r2_key = ?), ?, ?, ?, ?, ?, ?, ?").join(",");
-    const values = group.flatMap((row) => [r2Key, row.athlete_id, row.name, row.firstname, row.lastname, row.rank, row.source_category, row.score_hundredths]);
+  for (const group of chunks(upload.rows, Math.floor(MAX_BIND_PARAMS / 8))) {
+    const placeholders = group.map(() => "(?, ?, ?, ?, ?, ?, ?, ?)").join(",");
+    const values = group.flatMap((row) => [importId, row.athlete_id, row.name, row.firstname, row.lastname, row.rank, row.source_category, row.score_hundredths]);
     statements.push(env.DB.prepare(`
       INSERT INTO event_results (import_id, athlete_id, name, firstname, lastname, rank, source_category, score_hundredths)
       VALUES ${placeholders}
@@ -212,7 +223,7 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
   }
 
   const categoryRows = [...categoryByFlow.entries()];
-  for (const group of chunks(categoryRows, 250)) {
+  for (const group of chunks(categoryRows, Math.floor(MAX_BIND_PARAMS / 3))) {
     const placeholders = group.map(() => "(?, ?, ?)").join(",");
     const values = group.flatMap(([flowId, category]) => [upload.year, flowId, category]);
     statements.push(env.DB.prepare(`
@@ -222,11 +233,8 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
   }
 
   statements.push(
-    env.DB.prepare(`
-      UPDATE events
-      SET current_import_id = (SELECT import_id FROM imports WHERE r2_key = ?)
-      WHERE year = ? AND season = ?
-    `).bind(r2Key, upload.year, upload.season),
+    env.DB.prepare("UPDATE events SET current_import_id = ? WHERE event_pk = ?")
+      .bind(importId, eventPk),
     env.DB.prepare("DELETE FROM total_standings WHERE year = ?").bind(upload.year),
     env.DB.prepare(`
       WITH scores AS (

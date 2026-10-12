@@ -34,7 +34,7 @@
 - Use a table on wider screens and stacked rows/cards on narrow screens, avoiding horizontal scrolling.
 - Provide athlete-name search that filters the currently selected tab and category.
 - Normalize imported category labels for matching by ignoring case, diacritics, and whitespace; resolve them to the eight canonical Categories. Use canonical labels for display/filtering and preserve the uploaded source JSON unchanged.
-- Each athlete has one admin-assigned **year category** for the whole year; it affects Total standings only.
+- Each athlete has one **year category** for the whole year; accepted imports update it, and an admin may override it. It affects Total standings only.
 
 ## Public and admin experiences
 
@@ -69,10 +69,9 @@
 
 - Total is an interim ranking, summing each athlete’s event `score` from finished events to date. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
 - For the public-results POC, before admin ID mapping exists, treat each source `athlete_id` as a separate athlete and do not merge different IDs in Total.
-- On each accepted import, set each included athlete’s year category to that import’s canonical source category, resolving `athlete_id` through `athlete-linking`. This is last-write-wins; a later import can overwrite an admin edit.
+- Resolve each imported `athlete_id` through `athlete-linking` before updating its year category.
 - Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`).
-- Total uses each athlete’s current year category; Everyone combines all categories. Each accepted import updates the category for athletes in that file; an admin may overwrite it afterward, and a later import may overwrite it again.
-
+- Total uses each athlete’s current year category; Everyone combines all categories. Last successful write wins: imports update athletes present in the file, while admin edits can override the current value.
 - A missing result in a finished event contributes zero; an athlete with at least one finished-event result remains in Total.
 - An active event’s provisional score is shown in that event’s tab but is not included in Total until the event is finished.
 - The Total ranking becomes final after all four events are finished.
