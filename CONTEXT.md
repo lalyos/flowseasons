@@ -20,6 +20,9 @@ A unique Flow identifier for an Athlete; one Athlete may be associated with mult
 **Athlete ID mapping**:
 The current association of a Vertical-Life `athlete_id` with a Flow ID. Changing the association replaces the previous link; it affects Total standings only and does not change source event results.
 
+**Multi-registration**:
+A suspected case where one Athlete has multiple Vertical-Life `athlete_id` values after separate registrations. Similar names are a review signal, not proof of identity. See [Multi-registration](docs/multi-registration.md).
+
 **Event**:
 One of the four competitions held within a Flow Seasons year.
 _Avoid_: Competition (use Event consistently in the results context)

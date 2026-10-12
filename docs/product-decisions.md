@@ -14,7 +14,7 @@
 - Keep one `imports` row per accepted upload; re-imports append and do not overwrite import history.
 - Use `(event_id, id)` as the source result-set identity: a matching pair updates that result set; an unseen pair creates a new one.
 - Reject an unseen source pair if its season already occupies a 2026 event slot; do not create duplicate season tabs or overwrite by season name.
-- Use an `athlete-linking` table to map `athlete_id` strings to `flow_id` values. For the POC, seed one-to-one links using `flow-<athlete_id>`; different source IDs remain separate athletes. Each source `athlete_id` has exactly one current link, while a `flow_id` may be shared by multiple source IDs later.
+- Use an `athlete-linking` table to map `athlete_id` strings to `flow_id` values. Seed unreviewed IDs one-to-one using `flow-<athlete_id>`; confirmed multi-registration IDs may share a `flow_id`. Each source `athlete_id` has exactly one current link. The reviewed 2026 mappings are recorded in [multi-registration execution notes](multi-registration-execution-notes.md).
 - Store source identifiers as strings in D1 even when JSON encodes them as numbers; they are opaque identifiers, not quantities.
 - Store event and Total scores as integer hundredths in D1; round each source event score to two decimal places on import before summing Total, and convert scores to decimals for the API and display. Missing or non-numeric source scores become zero; they do not reject an import.
 - Normalize only event metadata and ranking entries needed by the public pages; retain the full source JSON, including startlists and routes, in R2.
@@ -70,7 +70,7 @@ The minimal first page defers Total, category filtering, and name search; the fo
 ## Total standings
 
 - Total is an interim ranking, summing each athlete’s event `score` from finished events to date. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
-- For the public-results POC, before admin ID mapping exists, treat each source `athlete_id` as a separate athlete and do not merge different IDs in Total.
+- For IDs without a confirmed athlete-linking mapping, treat each source `athlete_id` as a separate athlete in Total. IDs mapped to the same `flow_id` are grouped.
 - Resolve each imported `athlete_id` through `athlete-linking` before updating its year category.
 - Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`).
 - Total uses each athlete’s current year category; Everyone combines all categories. Last successful write wins: imports update athletes present in the file, while admin edits can override the current value.
