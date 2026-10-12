@@ -7,7 +7,7 @@
 - The current POC focuses on public results pages; admin tools and workflows are deferred.
 - Keep the POC minimal: no athlete detail pages or extra features until a working public POC is live.
 - Serve the static HTML frontend through Workers Static Assets; the same Worker handles the Backend For Frontend (BFF) API, which reads from D1.
-- The POC exposes one public `GET /api/results?year=2026` endpoint returning event metadata, Total rows, and event rows; the frontend handles tabs, category filtering, and athlete-name search locally.
+- The public endpoint is `GET /api/results?year=2026`. The initial frontend stage returns/displays event rows only; Total, category filtering, and name search are deferred.
 - Store uploaded source JSON in R2 and import it into D1 tables.
 - For the POC, upload `results.json` to the R2 `incoming/` prefix with Wrangler. An R2 object-created notification sends it through a Queue to the import Worker; no admin upload UI is needed.
 - The D1 `imports` table records accepted uploads only, with source `event_id`, source `id`, and the archived R2 object key. `upload_receipts` records accepted/rejected incoming object versions for Queue idempotency; rejected files remain archived without an `imports` row.
@@ -23,10 +23,12 @@
 
 ## Navigation and category view
 
+The minimal first page defers Total, category filtering, and name search; the following are later-stage requirements.
+
 - Results are organized into a **Total** tab and one tab per event.
-- **Total** is the default tab.
-- Finished and active events are shown. Active events are visibly marked **Active**.
-- For the 2026 POC, show tabs only for events with uploaded data; do not show a placeholder tab for the fourth event.
+- **Total** is the default tab when it is implemented. In the initial event-only stage, default to the chronologically latest event with published data.
+- Finished and active events are shown. Active events are visibly marked **Aktív** in the Hungarian UI.
+- Show event buttons only when multiple events have published data; do not show a placeholder for the fourth event.
 - A single page-wide category chooser sits above the result tabs and applies to every tab.
 - The chooser includes **Everyone** and categories. **Everyone** is the default and combines participants from all categories.
 - Category-specific rankings are a must-have.

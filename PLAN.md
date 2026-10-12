@@ -1,6 +1,6 @@
 # Flow Seasons Results — POC Plan
 
-**Status:** The R2-triggered importer has imported Spring; the event-only BFF is deployed. Total response and the full results UI remain.
+**Status:** The R2-triggered importer has imported Spring; the event-only BFF and minimal Hungarian frontend are deployed. Total, filters, and search are deferred.
 
 ## Goal and scope
 
@@ -101,7 +101,7 @@ Total includes each athlete’s summed score from finished events only. An absen
 - Frontend/BFF proposal: [`docs/frontend-bff-plan.md`](docs/frontend-bff-plan.md)
 - Architecture decision: [`docs/adr/0001-r2-source-archive-and-d1-read-model.md`](docs/adr/0001-r2-source-archive-and-d1-read-model.md)
 
-Suggested implementation order: review Spring names; import the remaining event files when ready; add Total to the BFF; build the full results UI.
+Suggested implementation order: review Spring names; import remaining event files when ready; add Total, category filtering, and name search as later increments.
 
 ## Import delivery
 

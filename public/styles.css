@@ -1,0 +1,269 @@
+:root {
+  color-scheme: light;
+  --paper: #fdf7e8;
+  --surface: #fffdf8;
+  --ink: #292720;
+  --muted: #686255;
+  --line: #e7dfcd;
+  --accent: #fdb927;
+  --accent-dark: #d2a100;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+button {
+  font: inherit;
+}
+
+.page {
+  width: min(100% - 2rem, 68rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 3.5rem) 0;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+h1 span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.message {
+  color: var(--muted);
+}
+
+.retry,
+.event-button {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.retry:hover,
+.event-button:hover {
+  border-color: var(--accent-dark);
+}
+
+.retry:focus-visible,
+.event-button:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 2px;
+}
+
+.events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.event-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  font-weight: 700;
+}
+
+.event-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.event-heading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.status-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.results-table th,
+.results-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.results-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.results-table .score {
+  text-align: right;
+}
+
+.results-table td[data-field="score"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 42rem) {
+  .page {
+    width: min(100% - 1.25rem, 68rem);
+  }
+
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .results-table,
+  .results-table tbody {
+    display: block;
+  }
+
+  .results-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .results-table tbody {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .results-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.35rem 1rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: var(--surface);
+  }
+
+  .results-table tbody td {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .results-table tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .results-table td[data-field="rank"] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .results-table td[data-field="score"] {
+    grid-column: 2;
+    grid-row: 1;
+    align-items: flex-end;
+  }
+
+  .results-table td[data-field="name"] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0.2rem;
+    font-size: 1.08rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .results-table td[data-field="category"] {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}

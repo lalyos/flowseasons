@@ -1,16 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="hu">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Flowseasons Worker check</title>
+    <meta name="theme-color" content="#fdf7e8" />
+    <title>Flow Seasons 2026 — Eredmények</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <main>
-      <h1>Flowseasons results BFF</h1>
-      <p id="summary" role="status" aria-live="polite">Loading 2026 event results…</p>
-      <pre id="results"></pre>
+    <main class="page">
+      <header class="page-header">
+        <p class="brand">FLOW BOULDER</p>
+        <h1>Flow Seasons <span>2026</span></h1>
+      </header>
+
+      <p id="message" class="message" role="status" aria-live="polite">Eredmények betöltése…</p>
+      <button id="retry" class="retry" type="button" hidden>Újrapróbálás</button>
+
+      <section id="results" hidden aria-label="Eredmények">
+        <nav id="events" class="events" aria-label="Események" hidden></nav>
+
+        <div class="event-heading">
+          <h2 id="event-title"></h2>
+          <span id="event-status" class="status-badge" hidden>Aktív</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="results-table">
+            <caption class="visually-hidden">Flow Seasons 2026 eredmények</caption>
+            <thead>
+              <tr>
+                <th scope="col">Helyezés</th>
+                <th scope="col">Név</th>
+                <th scope="col">Kategória</th>
+                <th scope="col" class="score">Pontszám</th>
+              </tr>
+            </thead>
+            <tbody id="result-rows"></tbody>
+          </table>
+        </div>
+      </section>
     </main>
-    <script type="module" src="/app.js"></script>
   </body>
 </html>

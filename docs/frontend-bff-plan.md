@@ -1,16 +1,17 @@
 # Frontend and BFF Plan
 
-**Status:** The Worker exposes a deployed event-only `GET /api/results?year=2026` BFF and a minimal JSON test page. Total and the production results UI are deferred.
+**Status:** A minimal Hungarian event-results page and event-only `GET /api/results?year=2026` BFF are deployed. Total and category/name filters are deferred.
 
 ## Frontend
 
-- Serve the static HTML/CSS/JS assets with Workers Static Assets; the same Worker handles the BFF API.
-- Route `/api/*` through Worker logic while allowing ordinary static assets to be served directly; API paths must not fall through to the SPA's HTML response.
-- One static, mobile-friendly results page; no athlete detail pages.
-- Fetch the 2026 result payload once from the BFF and keep it in page memory.
-- Render Total and one tab for each event with published data; mark active events.
-- Apply category selection and athlete-name search locally to the selected tab.
-- Show rank, name, category, and decimal score. Use a table on wide screens and stacked rows/cards on narrow screens.
+- Plain HTML/CSS/JS served by Workers Static Assets; no frontend framework or dependencies.
+- `/api/*` runs through the Worker; other static files are served directly.
+- Fetch results once on page load; offer a manual retry if the request fails. No polling.
+- The first page is event-only: no Total, category filter, or name search.
+- Translate season names for display, show event buttons only when multiple events exist, and default to the latest available season.
+- Mark active events `Aktív`.
+- Show rank, name, canonical category, and score using source-style decimal notation.
+- Use the Flow cream/gold palette with a system font; use a table on wide screens and stacked rows on narrow screens without horizontal scrolling.
 
 ## BFF
 
@@ -30,7 +31,7 @@ Current staged response shape:
       "season": "Spring",
       "status": "finished",
       "results": [
-        { "rank": 1, "name": "Example Athlete", "category": "Open - Men", "score": 1230.85 }
+        { "rank": 1, "name": "Example Athlete", "category": "Nyílt - Férfi", "score": 1230.85 }
       ]
     }
   ]
