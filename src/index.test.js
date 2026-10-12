@@ -2,25 +2,37 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import worker from "./index.js";
 
-test("results BFF returns current event rows without Total", async () => {
-  const dbRows = [
+test("results BFF returns materialized Total and event rows with source names", async () => {
+  const eventRows = [
     {
-      season: "Spring", status: "finished", entry_id: 1, rank: 1, name: "Example",
-      source_category: "Kezdő -Férfi", score_hundredths: 123085,
+      season: "Spring", status: "finished", entry_id: 1, rank: 1, name: "NAGY Ambrus",
+      source_category: "Nyílt - Férfi", score_hundredths: 123085,
     },
     {
-      season: "Summer", status: "active", entry_id: null, rank: null, name: null,
-      source_category: null, score_hundredths: null,
+      season: "Summer", status: "finished", entry_id: 2, rank: 1, name: "NAGY Ambrus",
+      source_category: "Nyílt - Férfi", score_hundredths: 190086,
     },
+    {
+      season: "Autumn", status: "active", entry_id: 3, rank: 1, name: "AMBRUS Nagy",
+      source_category: "Nyílt - Férfi", score_hundredths: 96554,
+    },
+  ];
+  const totalRows = [
+    { rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score_hundredths: 409725 },
   ];
   const env = {
     DB: {
       prepare(sql) {
-        assert.match(sql, /current_import_id/);
         return {
-          bind(year) {
-            assert.equal(year, 2026);
-            return { all: async () => ({ results: dbRows }) };
+          bind(...years) {
+            assert.ok(years.every((year) => year === 2026));
+            if (sql.includes("total_standings")) {
+              assert.deepEqual(years, [2026, 2026]);
+              assert.doesNotMatch(sql, /i\.status\s*=\s*'finished'/);
+              return { all: async () => ({ results: totalRows }) };
+            }
+            assert.match(sql, /current_import_id/);
+            return { all: async () => ({ results: eventRows }) };
           },
         };
       },
@@ -33,16 +45,28 @@ test("results BFF returns current event rows without Total", async () => {
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   assert.deepEqual(result, {
     year: 2026,
+    total: {
+      status: "active",
+      results: [{ rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 4097.25 }],
+    },
     events: [
       {
         season: "Spring",
         status: "finished",
-        results: [{ rank: 1, name: "Example", category: "Kezdő - Férfi", score: 1230.85 }],
+        results: [{ rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1230.85 }],
       },
-      { season: "Summer", status: "active", results: [] },
+      {
+        season: "Summer",
+        status: "finished",
+        results: [{ rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1900.86 }],
+      },
+      {
+        season: "Autumn",
+        status: "active",
+        results: [{ rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 965.54 }],
+      },
     ],
   });
-  assert.equal("total" in result, false);
 });
 
 test("results BFF rejects unsupported years without querying D1", async () => {
