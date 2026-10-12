@@ -1,0 +1,36 @@
+name = "flowseasons"
+main = "src/index.js"
+compatibility_date = "2026-10-12"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flowseasons"
+database_id = "ae6dbc6f-4705-423e-9c80-99f9e79d370f"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "RAW_RESULTS"
+bucket_name = "flowseasons"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 0.01
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[queues.consumers]]
+queue = "flowseasons-imports"
+max_batch_size = 1
+max_retries = 5
+dead_letter_queue = "flowseasons-imports-dlq"
+max_concurrency = 1

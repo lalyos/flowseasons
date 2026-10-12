@@ -1,0 +1,11 @@
+{
+  "name": "flow-seasons-results",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "wrangler": "4.149.0"
+  }
+}
