@@ -244,7 +244,7 @@ async function importAccepted(env, upload, r2Key, sourceKey, etag) {
         JOIN event_results er ON er.athlete_id = al.athlete_id
         JOIN imports i ON i.import_id = er.import_id
         JOIN events e ON e.event_pk = i.event_pk AND e.current_import_id = i.import_id
-        WHERE yc.year = ? AND i.status = 'finished'
+        WHERE yc.year = ?
         GROUP BY yc.year, yc.flow_id, yc.category
       ), ranked AS (
         SELECT year, flow_id, category, score_hundredths,

@@ -1,6 +1,6 @@
 # Flow Seasons Results — POC Plan
 
-**Status:** The R2-triggered importer has imported Spring; the event-only BFF and minimal Hungarian frontend are deployed. Total, filters, and search are deferred.
+**Status:** The R2 importer has published Spring, Summer, and Autumn. The deployed BFF returns materialized Total plus event results; the Hungarian frontend defaults to Total. Category filtering and name search remain deferred.
 
 ## Goal and scope
 
@@ -31,7 +31,7 @@ Wrangler or future admin upload
 
 ## Public frontend
 
-- One static results page with **Total** as the default tab, then one tab per event with published data. Mark active events **Active**.
+- One static results page with **Total** as the default tab, then one tab per event with published data. Mark active events **Aktív**.
 - A page-wide category chooser includes **Everyone** by default and applies to the selected tab. Athlete-name search filters the selected tab and category.
 - Rows show rank, athlete name, category, and score. Event rows use source categories/scores; Total rows use year categories/summed scores.
 - Preserve separate source ranking entries in event tabs. Match category labels ignoring case, diacritics, and whitespace; keep each exact `source_category` in D1/R2 and use canonical labels for display.
@@ -48,11 +48,17 @@ GET /api/results?year=2026
 
 It returns event metadata and rows, plus the precomputed Total rows. The frontend handles tabs, category filtering, and search locally. Row fields are `rank`, `name`, `category`, and decimal `score`; the API converts stored integer hundredths to decimals.
 
-Proposed response shape:
+Current response shape:
 
 ```json
 {
   "year": 2026,
+  "total": {
+    "status": "finished",
+    "results": [
+      { "rank": 1, "name": "NAGY Ambrus", "category": "Nyílt - Férfi", "score": 1230.85 }
+    ]
+  },
   "events": [
     {
       "season": "Spring",
@@ -76,7 +82,7 @@ The detailed working proposal is in [`docs/d1-schema-plan.md`](docs/d1-schema-pl
 - **`imports`** — one append-only row per accepted upload, with internal `import_id`, Flow `event_pk`, source JSON `event_id` and `id`, R2 key, status, and accepted time. Rejected uploads remain in R2 but have no `imports` row.
 - **`upload_receipts`** — records each incoming R2 key and ETag once, including rejected outcomes, so at-least-once Queue deliveries are idempotent.
 - **`event_results`** — current normalized ranking rows only. Store `name`, `firstname`, `lastname`, source `athlete_id`, source rank/category, and score in hundredths. Preserve duplicate source entries; a successful re-import replaces the current rows.
-- **`"athlete-linking"`** — current `athlete_id` → `flow_id` mapping. `athlete_id` is unique; `flow_id` is not, allowing many-to-one links. Changes overwrite the current mapping; no mapping history is stored. POC seeds one-to-one IDs as `flow-<athlete_id>`.
+- **`"athlete-linking"`** — current `athlete_id` → `flow_id` mapping. `athlete_id` is unique; `flow_id` is not, allowing many-to-one links. Changes overwrite the current mapping; no mapping history is stored. Unreviewed IDs are seeded one-to-one as `flow-<athlete_id>`; reviewed multi-registrations may share a Flow ID.
 - **`year_categories`** — current assignment keyed by `(year, flow_id)`. Each accepted import overwrites the category for included athletes; later admin edits or imports are last-write-wins.
 - **`total_standings`** — current Worker-generated Total read model keyed by `(year, flow_id)`, containing category, summed score in hundredths, and rank.
 
@@ -91,7 +97,7 @@ Store external numeric identifiers (`event_id`, source `id`, `athlete_id`) as te
 5. Import only the event metadata and ranking entries needed by the public site; the full original payload, including startlists/routes, remains in R2.
 6. Publish only after the D1 import and Total regeneration both succeed. In that publication step, replace the event’s current ranking rows, set `events.current_import_id`, update year categories, and publish the regenerated Total atomically. If processing fails, keep serving the previous D1 snapshot and leave the incoming object for Queue retry.
 
-Total includes each athlete’s summed score from finished events only. An absent result in a finished event contributes zero; an athlete with at least one finished-event result remains in Total. Active event scores appear in that event tab but are excluded from Total. Rank ties use Vertical-Life competition ranking (`1, 1, 3`). Regenerate Total on accepted source imports now; future athlete-link or year-category changes will also trigger regeneration.
+Total includes each athlete’s summed score from every event with published data. An absent result contributes zero; an athlete with at least one published result remains in Total. Active event scores appear in their event tab and are included in Total, so Total is marked active while any published event is active. Rank ties use Vertical-Life competition ranking (`1, 1, 3`). Regenerate Total on accepted source imports and athlete-link or year-category changes.
 
 ## Documentation and implementation order
 
@@ -101,7 +107,7 @@ Total includes each athlete’s summed score from finished events only. An absen
 - Frontend/BFF proposal: [`docs/frontend-bff-plan.md`](docs/frontend-bff-plan.md)
 - Architecture decision: [`docs/adr/0001-r2-source-archive-and-d1-read-model.md`](docs/adr/0001-r2-source-archive-and-d1-read-model.md)
 
-Suggested implementation order: review Spring names; import remaining event files when ready; add Total, category filtering, and name search as later increments.
+Implemented: import all three supplied events, confirm reviewed athlete links, expose materialized Total in the BFF, and display Total/event tabs. Remaining frontend increments are category filtering and athlete-name search.
 
 ## Import delivery
 

@@ -49,21 +49,51 @@ export default {
     }
 
     try {
-      const { results } = await env.DB.prepare(`
-        SELECT e.season, i.status, er.entry_id, er.rank, er.name,
-          er.source_category, er.score_hundredths
-        FROM events e
-        JOIN imports i ON i.import_id = e.current_import_id
-        LEFT JOIN event_results er ON er.import_id = i.import_id
-        WHERE e.year = ?
-        ORDER BY CASE e.season
-          WHEN 'Spring' THEN 1 WHEN 'Summer' THEN 2
-          WHEN 'Autumn' THEN 3 WHEN 'Winter' THEN 4 ELSE 5
-        END, er.rank, er.entry_id
-      `).bind(YEAR).all();
+      const [eventRows, totalRows] = await Promise.all([
+        env.DB.prepare(`
+          SELECT e.season, i.status, er.entry_id, er.rank, er.name,
+            er.source_category, er.score_hundredths
+          FROM events e
+          JOIN imports i ON i.import_id = e.current_import_id
+          LEFT JOIN event_results er ON er.import_id = i.import_id
+          WHERE e.year = ?
+          ORDER BY CASE e.season
+            WHEN 'Spring' THEN 1 WHEN 'Summer' THEN 2
+            WHEN 'Autumn' THEN 3 WHEN 'Winter' THEN 4 ELSE 5
+          END, er.rank, er.entry_id
+        `).bind(YEAR).all(),
+        env.DB.prepare(`
+          WITH names AS (
+            SELECT al.flow_id, er.name,
+              ROW_NUMBER() OVER (
+                PARTITION BY al.flow_id
+                ORDER BY CASE e.season
+                  WHEN 'Spring' THEN 1 WHEN 'Summer' THEN 2
+                  WHEN 'Autumn' THEN 3 WHEN 'Winter' THEN 4 ELSE 5
+                END DESC, er.rank IS NULL, er.rank, er.entry_id
+              ) AS position
+            FROM "athlete-linking" al
+            JOIN event_results er ON er.athlete_id = al.athlete_id
+            JOIN imports i ON i.import_id = er.import_id
+            JOIN events e ON e.event_pk = i.event_pk AND e.current_import_id = i.import_id
+            WHERE e.year = ?
+          )
+          SELECT ts.rank, names.name, ts.category, ts.score_hundredths
+          FROM total_standings ts
+          JOIN names ON names.flow_id = ts.flow_id AND names.position = 1
+          WHERE ts.year = ?
+          ORDER BY ts.rank, ts.flow_id
+        `).bind(YEAR, YEAR).all(),
+      ]);
 
+      const totalResults = totalRows.results.map((row) => ({
+        rank: row.rank,
+        name: row.name,
+        category: row.category,
+        score: row.score_hundredths / 100,
+      }));
       const events = new Map();
-      for (const row of results) {
+      for (const row of eventRows.results) {
         let event = events.get(row.season);
         if (!event) {
           event = { season: row.season, status: row.status, results: [] };
@@ -79,7 +109,12 @@ export default {
         }
       }
 
-      return Response.json({ year: YEAR, events: [...events.values()] }, { headers: NO_STORE });
+      const eventList = [...events.values()];
+      const total = {
+        status: eventList.some((event) => event.status === "active") ? "active" : "finished",
+        results: totalResults,
+      };
+      return Response.json({ year: YEAR, total, events: eventList }, { headers: NO_STORE });
     } catch (error) {
       console.error(JSON.stringify({
         message: "Results query failed",

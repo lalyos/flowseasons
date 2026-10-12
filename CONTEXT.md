@@ -44,5 +44,5 @@ The single category used for an Athlete’s category-specific Total standings fo
 A combined ranking that includes participants from every category.
 
 **Total standings**:
-The interim ranking for a Flow Seasons year, ordered by each Athlete’s summed `score` from finished events to date, using current Athlete ID mappings and year categories; it becomes final when all four events are finished.
+The interim ranking for a Flow Seasons year, ordered by each Athlete’s summed `score` from every event with published data, including active events, using current Athlete ID mappings and year categories. It is provisional while any published event is active and final when all four events are finished.
 _Avoid_: Overall ranking (unless explicitly qualified as the year’s Total standings)

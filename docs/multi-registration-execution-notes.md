@@ -10,7 +10,8 @@
 3. Kept an existing event 1 Flow ID when the group had an existing event 1 link. If it had none, used `flow-<lowest numeric athlete_id in the group>`. This minimizes changes to existing Flow IDs and gives otherwise-unlinked groups a stable, deterministic ID.
 4. Kept event ranking rows and source names unchanged. Mapping is used to group athletes for Total; it does not combine or rewrite event results.
 5. Consolidated `year_categories` for the newly linked groups using the latest accepted event import's category. If several IDs in a group were present in that same import, preferred the canonical ID's category, then the lowest numeric ID. Removed superseded per-ID category rows and rebuilt the materialized Total standings.
-6. Treated event 3 as active: it appears in event results but its score is excluded from Total until the event is finished. After consolidating the links, the materialized 2026 Total contains 367 athletes based on finished events.
+6. Following the organizer's instruction, Total includes scores from every event with published results, including active events. Total is marked active while any event is active because its score may still change.
+7. Rebuilt the production Total read model under this rule. It now contains 434 athletes, including provisional Autumn scores.
 
 ## Production imports
 
@@ -109,16 +110,18 @@ After the event 2 batch, the organizer confirmed another match that was outside 
 |---|---|---|
 | `flow-16006` | Spring/Summer `NAGY Ambrus`; Autumn `AMBRUS Nagy` | 16006, 9332 |
 
-`athlete_id` `9332` was updated from its separate seeded link (`flow-9332`) to `flow-16006`. The names and event rows remain as Vertical-Life supplied them; `year_category` is `Nyílt - Férfi` for both. Autumn is active, so its 965.54 score is not included in the current Total; Spring and Summer remain combined under `flow-16006` at 3131.71. The current confirmed set is now **72 multi-registration Flow IDs covering 202 source IDs** (the 71 event 2 groups above plus this group).
+`athlete_id` `9332` was updated from its separate seeded link (`flow-9332`) to `flow-16006`. The names and event rows remain as Vertical-Life supplied them; `year_category` is `Nyílt - Férfi` for both. Spring and Summer total 3131.71; active Autumn's provisional 965.54 is now included, making the current Total 4097.25. The current confirmed set is now **72 multi-registration Flow IDs covering 202 source IDs** (the 71 event 2 groups above plus this group).
 
-## Frontend behavior and verification
+## Total BFF and frontend
 
-`public/app.js` already builds its event buttons from every event returned by `/api/results`, has labels for Spring/Summer/Autumn, marks active events, and opens the latest available event by default. With the three current API events, it will show **Tavasz**, **Nyár**, and **Ősz**; Ősz is the default and marked active. No frontend code change or redeployment was necessary. `wrangler deploy --dry-run` confirmed the current Worker/assets bundle packages successfully.
+The BFF returns the precomputed `total_standings` rows in `total.results`, alongside unchanged source event rows in `events`. Total's display name is taken from the latest published event where that athlete has a result; ties within that event use the best-ranked source row. Total is marked active while any published event is active.
 
-Checks run: `npm test` (5 passing), remote D1 queries for current imports and counts, and an exact verification that all 200 linked source IDs resolve to the intended 71 Flow IDs. Source JSON files were not modified.
+The frontend shows tabs in this order: **Total**, **Tavasz**, **Nyár**, **Ősz**. Total is the default; both Total and Autumn are marked active. The updated Worker was deployed as version `8e8628ab-bc48-48e6-97aa-fb56675c3b1c` to `https://flowseasons.lalyos22.workers.dev`.
+
+Checks run: `npm test` (5 passing), `wrangler deploy --dry-run`, and a live HTTP request confirming 434 Total rows, Ambrus at 4097.25, and current event counts/statuses (Spring 294/finished, Summer 217/finished, Autumn 227/active). Production D1 verification confirmed all **202 linked source IDs** in the **72 confirmed Flow ID groups**. Source JSON files were not modified.
 
 ## Follow-up for later review
 
-- These links reflect the organizer's approved identity assumptions; athlete-linking is a current-state table and does not retain previous decisions.
+- These links reflect the organizer's approved identity assumptions; `athlete-linking` is a current-state table and does not retain previous decisions.
 - Nine exact-match event 2 IDs were startlist-only (and some of the name-variation cases are startlist-only). They have been linked, but they contribute no event score unless they appear in a ranking.
-- The guessed public `workers.dev` hostname did not resolve from this environment, so the public page itself was not browser-verified. The D1 data and existing data-driven frontend path were verified separately.
+- The API and deployed HTML were checked over HTTP; no browser automation or visual screenshot check was performed.

@@ -7,7 +7,7 @@
 - The current POC focuses on public results pages; admin tools and workflows are deferred.
 - Keep the POC minimal: no athlete detail pages or extra features until a working public POC is live.
 - Serve the static HTML frontend through Workers Static Assets; the same Worker handles the Backend For Frontend (BFF) API, which reads from D1.
-- The public endpoint is `GET /api/results?year=2026`. The initial frontend stage returns/displays event rows only; Total, category filtering, and name search are deferred.
+- The public endpoint is `GET /api/results?year=2026`. It returns materialized Total standings and current event rows; category filtering and name search remain deferred.
 - Store uploaded source JSON in R2 and import it into D1 tables.
 - For the POC, upload `results.json` to the R2 `incoming/` prefix with Wrangler. An R2 object-created notification sends it through a Queue to the import Worker; no admin upload UI is needed.
 - The D1 `imports` table records accepted uploads only, with source `event_id`, source `id`, and the archived R2 object key. `upload_receipts` records accepted/rejected incoming object versions for Queue idempotency; rejected files remain archived without an `imports` row.
@@ -23,12 +23,12 @@
 
 ## Navigation and category view
 
-The minimal first page defers Total, category filtering, and name search; the following are later-stage requirements.
+The current first page includes Total and event tabs; category filtering and name search remain later-stage requirements.
 
 - Results are organized into a **Total** tab and one tab per event.
-- **Total** is the default tab when it is implemented. In the initial event-only stage, default to the chronologically latest event with published data.
+- **Total** is the default tab.
 - Finished and active events are shown. Active events are visibly marked **Aktív** in the Hungarian UI.
-- Show event buttons only when multiple events have published data; do not show a placeholder for the fourth event.
+- Show result-view buttons when multiple tabs are available; do not show a placeholder for the fourth event.
 - A single page-wide category chooser sits above the result tabs and applies to every tab.
 - The chooser includes **Everyone** and categories. **Everyone** is the default and combines participants from all categories.
 - Category-specific rankings are a must-have.
@@ -69,11 +69,11 @@ The minimal first page defers Total, category filtering, and name search; the fo
 
 ## Total standings
 
-- Total is an interim ranking, summing each athlete’s event `score` from finished events to date. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
+- Total is an interim ranking, summing each athlete’s event `score` from every event with published data, whether that event is active or finished. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
 - For IDs without a confirmed athlete-linking mapping, treat each source `athlete_id` as a separate athlete in Total. IDs mapped to the same `flow_id` are grouped.
 - Resolve each imported `athlete_id` through `athlete-linking` before updating its year category.
-- Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`).
+- Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`). For the Total display name, use the source name from the latest event in which the athlete has a result; within that event, prefer the best-ranked source row. Mark Total `Aktív` while any published event is active.
 - Total uses each athlete’s current year category; Everyone combines all categories. Last successful write wins: imports update athletes present in the file, while admin edits can override the current value.
-- A missing result in a finished event contributes zero; an athlete with at least one finished-event result remains in Total.
-- An active event’s provisional score is shown in that event’s tab but is not included in Total until the event is finished.
+- A missing result in a published event contributes zero; an athlete with at least one result in a published event remains in Total.
+- An active event’s provisional score is shown in its event tab and included in Total; therefore Total is provisional while any published event is active.
 - The Total ranking becomes final after all four events are finished.

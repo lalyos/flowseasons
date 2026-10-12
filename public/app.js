@@ -1,10 +1,11 @@
 const seasonNames = {
+  Total: "Total",
   Spring: "Tavasz",
   Summer: "Nyár",
   Autumn: "Ősz",
   Winter: "Tél",
 };
-const seasonOrder = ["Spring", "Summer", "Autumn", "Winter"];
+const seasonOrder = ["Total", "Spring", "Summer", "Autumn", "Winter"];
 const message = document.querySelector("#message");
 const retry = document.querySelector("#retry");
 const results = document.querySelector("#results");
@@ -50,15 +51,16 @@ async function loadResults() {
     const response = await fetch("/api/results?year=2026", { cache: "no-store" });
     if (!response.ok) throw new Error();
     const data = await response.json();
-    const events = [...data.events].sort(
-      (a, b) => seasonOrder.indexOf(a.season) - seasonOrder.indexOf(b.season),
-    );
+    const tabs = [
+      { season: "Total", results: data.total.results },
+      ...data.events,
+    ].sort((a, b) => seasonOrder.indexOf(a.season) - seasonOrder.indexOf(b.season));
     const buttons = new Map();
 
     eventsNav.replaceChildren();
-    eventsNav.hidden = events.length < 2;
-    if (events.length > 1) {
-      for (const event of events) {
+    eventsNav.hidden = tabs.length < 2;
+    if (tabs.length > 1) {
+      for (const event of tabs) {
         const button = document.createElement("button");
         button.className = "event-button";
         button.type = "button";
@@ -69,7 +71,7 @@ async function loadResults() {
       }
     }
 
-    showEvent(events[events.length - 1], buttons);
+    showEvent(tabs[0], buttons);
     results.hidden = false;
     message.hidden = true;
   } catch {
