@@ -1,18 +1,14 @@
 const summary = document.querySelector("#summary");
-const checks = document.querySelector("#checks");
+const output = document.querySelector("#results");
 
 try {
-  const response = await fetch("/api/health", { cache: "no-store" });
-  const result = await response.json();
-  summary.textContent = result.ok
-    ? "Worker and bindings are reachable."
-    : "One or more binding checks failed.";
+  const response = await fetch("/api/results?year=2026", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Results request failed");
 
-  for (const [name, ok] of [["D1", result.d1], ["R2", result.r2]]) {
-    const item = document.createElement("li");
-    item.textContent = `${name}: ${ok ? "OK" : "unavailable"}`;
-    checks.append(item);
-  }
-} catch {
-  summary.textContent = "Could not reach the Worker.";
+  const entryCount = data.events.reduce((total, event) => total + event.results.length, 0);
+  summary.textContent = `Loaded ${entryCount} rows from ${data.events.length} event(s). Total is not included.`;
+  output.textContent = JSON.stringify(data, null, 2);
+} catch (error) {
+  summary.textContent = error instanceof Error ? error.message : "Could not load results.";
 }

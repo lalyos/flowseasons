@@ -1,6 +1,6 @@
 # Frontend and BFF Plan
 
-**Status:** The resource-check page and health endpoint are deployed; the results UI and API described below remain unimplemented.
+**Status:** The Worker exposes a deployed event-only `GET /api/results?year=2026` BFF and a minimal JSON test page. Total and the production results UI are deferred.
 
 ## Frontend
 
@@ -15,12 +15,12 @@
 ## BFF
 
 - One public endpoint: `GET /api/results?year=2026`.
-- Read the current event metadata and ranking rows, plus the materialized Total rows, from D1.
+- The current staged API reads current event metadata and ranking rows from D1. It intentionally omits Total; Total can be added as a later step.
 - Return event status and rows with `rank`, `name`, `category`, and `score` (converted from integer hundredths).
 - Return `Cache-Control: no-store` so the next page load sees newly published data.
 - No admin or upload endpoints in the POC.
 
-Proposed response shape:
+Current staged response shape:
 
 ```json
 {
@@ -33,9 +33,6 @@ Proposed response shape:
         { "rank": 1, "name": "Example Athlete", "category": "Open - Men", "score": 1230.85 }
       ]
     }
-  ],
-  "total": [
-    { "rank": 1, "name": "Example Athlete", "category": "Open - Men", "score": 1230.85 }
   ]
 }
 ```
