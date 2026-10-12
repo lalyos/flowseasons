@@ -18,20 +18,24 @@ The athlete identifier supplied by Vertical-Life and retained unchanged from the
 A unique Flow identifier for an Athlete; one Athlete may be associated with multiple Vertical-Life `athlete_id` values.
 
 **Athlete ID mapping**:
-An admin decision associating a Vertical-Life `athlete_id` with a Flow ID. Each change is recorded separately; changes affect Total standings, not the original event results.
+The current association of a Vertical-Life `athlete_id` with a Flow ID. Changing the association replaces the previous link; it affects Total standings only and does not change source event results.
 
 **Event**:
 One of the four competitions held within a Flow Seasons year.
 _Avoid_: Competition (use Event consistently in the results context)
 
+**Finished event**:
+An Event whose results are final.
+_Avoid_: Completed event
+
 **Active event**:
 An event that is in progress and whose results are provisional.
 
 **Category**:
-A participant group such as `Hobbi - Férfi`, `Kezdő - Női`, `Nyílt - Férfi`, or `Senior - Női`.
+A participant group such as `Hobbi - Férfi`, `Kezdő - Női`, `Nyílt - Férfi`, or `Senior - Női`; Senior is the over-40 group.
 
 **Year category**:
-The single category an Athlete is assigned to for a whole Flow Seasons year by an admin. It affects category-specific Total standings only.
+The single category used for an Athlete’s category-specific Total standings for a Flow Seasons year. The latest accepted result import sets it for athletes in that import; an admin may change it afterward.
 
 **Everyone standings**:
 A combined ranking that includes participants from every category.

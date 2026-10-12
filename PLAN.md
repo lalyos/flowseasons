@@ -1,6 +1,6 @@
 # Flow Seasons Results — POC Plan
 
-**Status:** D1 schema and a deployed resource-check Worker exist; the importer and public results app remain unimplemented.
+**Status:** D1 schema, an import processor, and a deployed resource-check Worker exist; the event trigger and public results app remain to be completed.
 
 ## Goal and scope
 
@@ -34,7 +34,7 @@ Wrangler or future admin upload
 - One static results page with **Total** as the default tab, then one tab per event with published data. Mark active events **Active**.
 - A page-wide category chooser includes **Everyone** by default and applies to the selected tab. Athlete-name search filters the selected tab and category.
 - Rows show rank, athlete name, category, and score. Event rows use source categories/scores; Total rows use year categories/summed scores.
-- Preserve separate source ranking entries in event tabs. Normalize the known category spacing variant `Kezdő -Férfi` to `Kezdő - Férfi` for display/filtering only; keep the original source JSON unchanged.
+- Preserve separate source ranking entries in event tabs. Match category labels ignoring case, diacritics, and whitespace; keep each exact `source_category` in D1/R2 and use canonical labels for display.
 - Use a table on wider screens and stacked rows/cards on narrow screens, without horizontal scrolling.
 - Do not make athlete names links or add detail pages.
 
@@ -101,8 +101,8 @@ Total includes each athlete’s summed score from finished events only. An absen
 - Frontend/BFF proposal: [`docs/frontend-bff-plan.md`](docs/frontend-bff-plan.md)
 - Architecture decision: [`docs/adr/0001-r2-source-archive-and-d1-read-model.md`](docs/adr/0001-r2-source-archive-and-d1-read-model.md)
 
-Suggested implementation order: scaffold the Worker with Static Assets and BFF route; create D1 schema and bindings; build the Wrangler import step and Total regeneration; seed the 2026 data/category file; implement the static results page; test against the three supplied files; then deploy the public POC.
+Suggested implementation order: finish the R2 notification/Queue trigger; test the import processor against the three supplied files; implement the results API and static results page; then deploy the public POC.
 
-## Known constraint
+## Import delivery
 
 Queue delivery is at-least-once, so the importer deduplicates by incoming object key and ETag. Each upload should use a new key; archived names add a stable upload hash to avoid timestamp collisions.
