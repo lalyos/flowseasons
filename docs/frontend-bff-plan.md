@@ -17,7 +17,7 @@
 
 - One public endpoint: `GET /api/results?year=2026`.
 - Read current event metadata/ranking rows and the materialized `total_standings` read model from D1; public requests do not recalculate Total.
-- Return Total and event rows with `rank`, `name`, `category`, and `score` (converted from integer hundredths). Event names remain source names. Total includes scores from all published events, and is `active` while any event is active. Its display name comes from the latest event containing the athlete, preferring the best-ranked source row within that event.
+- Return Total rows with `flow_id`; event rows also include the original `athlete_id` and resolved `flow_id`. Names remain source names. IDs are hidden by default and revealed by the debug-only `?showid=true` preference, persisted in a 30-day cookie; `?showid=false` disables it. The parameter is removed from the address after it is applied, and no UI toggle is provided. Scores are converted from integer hundredths. Total includes scores from all published events, and is `active` while any event is active. Its display name comes from the latest event containing the athlete, preferring the best-ranked source row within that event.
 - Return `Cache-Control: no-store` so the next page load sees newly published data.
 - No admin or upload endpoints in the POC.
 
@@ -27,8 +27,9 @@ Response shape:
 {
   "year": 2026,
   "total": {
+    "status": "finished",
     "results": [
-      { "rank": 1, "name": "Example Athlete", "category": "Nyílt - Férfi", "score": 1230.85 }
+      { "flow_id": "flow-123", "rank": 1, "name": "Example Athlete", "category": "Nyílt - Férfi", "score": 1230.85 }
     ]
   },
   "events": [
@@ -36,7 +37,7 @@ Response shape:
       "season": "Spring",
       "status": "finished",
       "results": [
-        { "rank": 1, "name": "Example Athlete", "category": "Nyílt - Férfi", "score": 1230.85 }
+        { "athlete_id": "123", "flow_id": "flow-123", "rank": 1, "name": "Example Athlete", "category": "Nyílt - Férfi", "score": 1230.85 }
       ]
     }
   ]

@@ -114,9 +114,9 @@ After the event 2 batch, the organizer confirmed another match that was outside 
 
 ## Total BFF and frontend
 
-The BFF returns the precomputed `total_standings` rows in `total.results`, alongside unchanged source event rows in `events`. Total's display name is taken from the latest published event where that athlete has a result; ties within that event use the best-ranked source row. Total is marked active while any published event is active.
+The BFF returns the precomputed `total_standings` rows in `total.results`, alongside unchanged source event rows in `events`. Total rows include `flow_id`; event rows include both the original `athlete_id` and its resolved `flow_id`. IDs stay hidden by default; `?showid=true` reveals them and sets a 30-day cookie, while `?showid=false` hides them again. The parameter is removed from the address after applying the preference; there is no UI toggle. Total's display name is taken from the latest published event where that athlete has a result; ties within that event use the best-ranked source row. Total is marked active while any published event is active.
 
-The frontend shows tabs in this order: **Total**, **Tavasz**, **Nyár**, **Ősz**. Total is the default; both Total and Autumn are marked active. The updated Worker was deployed as version `8e8628ab-bc48-48e6-97aa-fb56675c3b1c` to `https://flowseasons.lalyos22.workers.dev`.
+The frontend shows tabs in this order: **Total**, **Tavasz**, **Nyár**, **Ősz**. Total is the default; both Total and Autumn are marked active. The Worker with the debug ID preference was deployed as version `0643102b-a72c-466f-8c6c-2f7fd2a3595c` to `https://flowseasons.lalyos22.workers.dev`.
 
 Checks run: `npm test` (5 passing), `wrangler deploy --dry-run`, and a live HTTP request confirming 434 Total rows, Ambrus at 4097.25, and current event counts/statuses (Spring 294/finished, Summer 217/finished, Autumn 227/active). Production D1 verification confirmed all **202 linked source IDs** in the **72 confirmed Flow ID groups**. Source JSON files were not modified.
 

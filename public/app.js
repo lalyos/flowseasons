@@ -1,3 +1,6 @@
+import { filterByCategory } from "./category-filter.js";
+import { resolveShowIds } from "./show-ids.js";
+
 const seasonNames = {
   Total: "Total",
   Spring: "Tavasz",
@@ -13,13 +16,30 @@ const eventsNav = document.querySelector("#events");
 const eventTitle = document.querySelector("#event-title");
 const eventStatus = document.querySelector("#event-status");
 const rows = document.querySelector("#result-rows");
+const categoryFilter = document.querySelector("#category-filter");
+const emptyResults = document.querySelector("#empty-results");
+const tableWrap = document.querySelector(".table-wrap");
+let selectedTab;
+let tabButtons = new Map();
+
+const showIds = resolveShowIds(
+  window.location,
+  document.cookie,
+  (value) => { document.cookie = value; },
+  (url) => window.history.replaceState(null, "", url),
+);
 
 function showEvent(event, buttons) {
+  selectedTab = event;
+  tabButtons = buttons;
   eventTitle.textContent = seasonNames[event.season] || event.season;
   eventStatus.hidden = event.status !== "active";
   rows.replaceChildren();
 
-  for (const result of event.results) {
+  const visibleResults = filterByCategory(event.results, categoryFilter.value);
+  emptyResults.hidden = visibleResults.length > 0;
+  tableWrap.hidden = visibleResults.length === 0;
+  for (const result of visibleResults) {
     const row = document.createElement("tr");
     for (const [field, label, value] of [
       ["rank", "Helyezés", result.rank],
@@ -32,6 +52,15 @@ function showEvent(event, buttons) {
       cell.dataset.label = label;
       cell.textContent = value;
       row.append(cell);
+    }
+    if (showIds) {
+      const identifiers = document.createElement("small");
+      identifiers.className = "identity-ids";
+      identifiers.textContent = [
+        ...(result.athlete_id == null ? [] : [`Vertical-Life ID: ${result.athlete_id}`]),
+        `Flow ID: ${result.flow_id ?? "—"}`,
+      ].join(" · ");
+      row.querySelector('[data-field="name"]').append(identifiers);
     }
     rows.append(row);
   }
@@ -79,6 +108,10 @@ async function loadResults() {
     retry.hidden = false;
   }
 }
+
+categoryFilter.addEventListener("change", () => {
+  if (selectedTab) showEvent(selectedTab, tabButtons);
+});
 
 retry.addEventListener("click", loadResults);
 loadResults();

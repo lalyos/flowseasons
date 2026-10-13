@@ -51,11 +51,12 @@ export default {
     try {
       const [eventRows, totalRows] = await Promise.all([
         env.DB.prepare(`
-          SELECT e.season, i.status, er.entry_id, er.rank, er.name,
-            er.source_category, er.score_hundredths
+          SELECT e.season, i.status, er.entry_id, er.athlete_id, al.flow_id,
+            er.rank, er.name, er.source_category, er.score_hundredths
           FROM events e
           JOIN imports i ON i.import_id = e.current_import_id
           LEFT JOIN event_results er ON er.import_id = i.import_id
+          LEFT JOIN "athlete-linking" al ON al.athlete_id = er.athlete_id
           WHERE e.year = ?
           ORDER BY CASE e.season
             WHEN 'Spring' THEN 1 WHEN 'Summer' THEN 2
@@ -78,7 +79,7 @@ export default {
             JOIN events e ON e.event_pk = i.event_pk AND e.current_import_id = i.import_id
             WHERE e.year = ?
           )
-          SELECT ts.rank, names.name, ts.category, ts.score_hundredths
+          SELECT ts.flow_id, ts.rank, names.name, ts.category, ts.score_hundredths
           FROM total_standings ts
           JOIN names ON names.flow_id = ts.flow_id AND names.position = 1
           WHERE ts.year = ?
@@ -87,6 +88,7 @@ export default {
       ]);
 
       const totalResults = totalRows.results.map((row) => ({
+        flow_id: row.flow_id,
         rank: row.rank,
         name: row.name,
         category: row.category,
@@ -101,6 +103,8 @@ export default {
         }
         if (row.entry_id !== null) {
           event.results.push({
+            athlete_id: row.athlete_id,
+            flow_id: row.flow_id,
             rank: row.rank,
             name: row.name,
             category: canonicalCategory(row.source_category) ?? row.source_category,

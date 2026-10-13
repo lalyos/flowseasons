@@ -46,7 +46,7 @@ One public endpoint:
 GET /api/results?year=2026
 ```
 
-It returns event metadata and rows, plus the precomputed Total rows. The frontend handles tabs, category filtering, and search locally. Row fields are `rank`, `name`, `category`, and decimal `score`; the API converts stored integer hundredths to decimals.
+It returns event metadata and rows, plus the precomputed Total rows. Total rows include `flow_id`; event rows include the original `athlete_id` and resolved `flow_id`. Other row fields are `rank`, `name`, `category`, and decimal `score`; the API converts stored integer hundredths to decimals. The frontend reveals these IDs only in the debug view: `?showid=true` sets a 30-day cookie and removes the parameter from the address; `?showid=false` disables it. Otherwise IDs stay hidden unless the cookie is set. No UI toggle is provided.
 
 Current response shape:
 
@@ -54,22 +54,19 @@ Current response shape:
 {
   "year": 2026,
   "total": {
-    "status": "finished",
+    "status": "active",
     "results": [
-      { "rank": 1, "name": "NAGY Ambrus", "category": "Nyílt - Férfi", "score": 1230.85 }
+      { "flow_id": "flow-16006", "rank": 1, "name": "AMBRUS Nagy", "category": "Nyílt - Férfi", "score": 4097.25 }
     ]
   },
   "events": [
     {
-      "season": "Spring",
-      "status": "finished",
+      "season": "Autumn",
+      "status": "active",
       "results": [
-        { "rank": 1, "name": "NAGY Ambrus", "category": "Nyílt - Férfi", "score": 1230.85 }
+        { "athlete_id": "9332", "flow_id": "flow-16006", "rank": 1, "name": "AMBRUS Nagy", "category": "Nyílt - Férfi", "score": 965.54 }
       ]
     }
-  ],
-  "total": [
-    { "rank": 1, "name": "NAGY Ambrus", "category": "Nyílt - Férfi", "score": 1230.85 }
   ]
 }
 ```
