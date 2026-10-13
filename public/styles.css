@@ -43,14 +43,6 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
-.brand {
-  margin: 0 0 0.4rem;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
 h1,
 h2,
 p {
