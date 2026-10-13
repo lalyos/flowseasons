@@ -96,6 +96,35 @@ h1 span {
   outline-offset: 2px;
 }
 
+.category-filter {
+  display: grid;
+  gap: 0.3rem;
+  width: min(100%, 22rem);
+  margin-bottom: 1.25rem;
+}
+
+.category-filter label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.category-filter select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+}
+
+.category-filter select:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 2px;
+}
+
 .events {
   display: flex;
   flex-wrap: wrap;
@@ -128,6 +157,15 @@ h1 span {
   background: var(--accent);
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.empty-results {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  color: var(--muted);
+  background: var(--surface);
 }
 
 .table-wrap {
@@ -167,6 +205,15 @@ h1 span {
 .results-table td[data-field="score"] {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.identity-ids {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .visually-hidden {

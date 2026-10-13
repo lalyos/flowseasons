@@ -2,23 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import worker from "./index.js";
 
-test("results BFF returns materialized Total and event rows with source names", async () => {
+test("results BFF returns athlete IDs and Flow IDs without changing event names", async () => {
   const eventRows = [
     {
-      season: "Spring", status: "finished", entry_id: 1, rank: 1, name: "NAGY Ambrus",
-      source_category: "Nyílt - Férfi", score_hundredths: 123085,
+      season: "Spring", status: "finished", entry_id: 1, athlete_id: "16006", flow_id: "flow-16006",
+      rank: 1, name: "NAGY Ambrus", source_category: "Nyílt - Férfi", score_hundredths: 123085,
     },
     {
-      season: "Summer", status: "finished", entry_id: 2, rank: 1, name: "NAGY Ambrus",
-      source_category: "Nyílt - Férfi", score_hundredths: 190086,
+      season: "Summer", status: "finished", entry_id: 2, athlete_id: "16006", flow_id: "flow-16006",
+      rank: 1, name: "NAGY Ambrus", source_category: "Nyílt - Férfi", score_hundredths: 190086,
     },
     {
-      season: "Autumn", status: "active", entry_id: 3, rank: 1, name: "AMBRUS Nagy",
-      source_category: "Nyílt - Férfi", score_hundredths: 96554,
+      season: "Autumn", status: "active", entry_id: 3, athlete_id: "9332", flow_id: "flow-16006",
+      rank: 1, name: "AMBRUS Nagy", source_category: "Nyílt - Férfi", score_hundredths: 96554,
     },
   ];
   const totalRows = [
-    { rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score_hundredths: 409725 },
+    { flow_id: "flow-16006", rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score_hundredths: 409725 },
   ];
   const env = {
     DB: {
@@ -28,10 +28,12 @@ test("results BFF returns materialized Total and event rows with source names", 
             assert.ok(years.every((year) => year === 2026));
             if (sql.includes("total_standings")) {
               assert.deepEqual(years, [2026, 2026]);
+              assert.match(sql, /ts\.flow_id/);
               assert.doesNotMatch(sql, /i\.status\s*=\s*'finished'/);
               return { all: async () => ({ results: totalRows }) };
             }
             assert.match(sql, /current_import_id/);
+            assert.match(sql, /"athlete-linking"/);
             return { all: async () => ({ results: eventRows }) };
           },
         };
@@ -47,23 +49,23 @@ test("results BFF returns materialized Total and event rows with source names", 
     year: 2026,
     total: {
       status: "active",
-      results: [{ rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 4097.25 }],
+      results: [{ flow_id: "flow-16006", rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 4097.25 }],
     },
     events: [
       {
         season: "Spring",
         status: "finished",
-        results: [{ rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1230.85 }],
+        results: [{ athlete_id: "16006", flow_id: "flow-16006", rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1230.85 }],
       },
       {
         season: "Summer",
         status: "finished",
-        results: [{ rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1900.86 }],
+        results: [{ athlete_id: "16006", flow_id: "flow-16006", rank: 1, name: "NAGY Ambrus", category: "Nyílt - Férfi", score: 1900.86 }],
       },
       {
         season: "Autumn",
         status: "active",
-        results: [{ rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 965.54 }],
+        results: [{ athlete_id: "9332", flow_id: "flow-16006", rank: 1, name: "AMBRUS Nagy", category: "Nyílt - Férfi", score: 965.54 }],
       },
     ],
   });

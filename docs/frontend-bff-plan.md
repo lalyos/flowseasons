@@ -1,13 +1,13 @@
 # Frontend and BFF Plan
 
-**Status:** The Hungarian results page and `GET /api/results?year=2026` BFF display materialized Total standings and current event rows. Category/name filters are deferred.
+**Status:** The Hungarian results page and `GET /api/results?year=2026` BFF display materialized Total standings, current event rows, and a page-wide category filter. Name search is deferred.
 
 ## Frontend
 
 - Plain HTML/CSS/JS served by Workers Static Assets; no frontend framework or dependencies.
 - `/api/*` runs through the Worker; other static files are served directly.
 - Fetch results once on page load; offer a manual retry if the request fails. No polling.
-- The first page includes a Total tab and one tab per published event. Category filtering and name search are deferred.
+- The first page includes a Total tab, one tab per published event, and a page-wide category filter. A selected category is ranked from 1 within that category (competition ties preserved); Everyone retains overall ranks. Name search is deferred.
 - Translate season names for display, show result-view buttons when multiple tabs exist, and default to Total.
 - Mark active events `Aktív`.
 - Show rank, name, canonical category, and score using source-style decimal notation.

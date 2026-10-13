@@ -1,6 +1,6 @@
 # Flow Seasons Results — POC Plan
 
-**Status:** The R2 importer has published Spring, Summer, and Autumn. The deployed BFF returns materialized Total plus event results; the Hungarian frontend defaults to Total. Category filtering and name search remain deferred.
+**Status:** The R2 importer has published Spring, Summer, and Autumn. The deployed BFF returns materialized Total plus event results; the Hungarian frontend defaults to Total and has a page-wide category filter. Athlete-name search remains deferred.
 
 ## Goal and scope
 
@@ -32,7 +32,7 @@ Wrangler or future admin upload
 ## Public frontend
 
 - One static results page with **Total** as the default tab, then one tab per event with published data. Mark active events **Aktív**.
-- A page-wide category chooser includes **Everyone** by default and applies to the selected tab. Athlete-name search filters the selected tab and category.
+- A page-wide category chooser includes **Everyone** by default and applies to the selected tab. Selected-category positions are recalculated from 1, preserving competition ties; Everyone retains overall ranks. Athlete-name search filters the selected tab and category.
 - Rows show rank, athlete name, category, and score. Event rows use source categories/scores; Total rows use year categories/summed scores.
 - Preserve separate source ranking entries in event tabs. Match category labels ignoring case, diacritics, and whitespace; keep each exact `source_category` in D1/R2 and use canonical labels for display.
 - Use a table on wider screens and stacked rows/cards on narrow screens, without horizontal scrolling.
@@ -104,7 +104,7 @@ Total includes each athlete’s summed score from every event with published dat
 - Frontend/BFF proposal: [`docs/frontend-bff-plan.md`](docs/frontend-bff-plan.md)
 - Architecture decision: [`docs/adr/0001-r2-source-archive-and-d1-read-model.md`](docs/adr/0001-r2-source-archive-and-d1-read-model.md)
 
-Implemented: import all three supplied events, confirm reviewed athlete links, expose materialized Total in the BFF, and display Total/event tabs. Remaining frontend increments are category filtering and athlete-name search.
+Implemented: import all three supplied events, confirm reviewed athlete links, expose materialized Total in the BFF, display Total/event tabs, and filter by category. The remaining frontend increment is athlete-name search.
 
 ## Import delivery
 

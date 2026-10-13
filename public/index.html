@@ -19,12 +19,29 @@
       <button id="retry" class="retry" type="button" hidden>Újrapróbálás</button>
 
       <section id="results" hidden aria-label="Eredmények">
+        <div class="category-filter">
+          <label for="category-filter">Kategória</label>
+          <select id="category-filter">
+            <option value="">Minden kategória</option>
+            <option>Hobbi - Férfi</option>
+            <option>Hobbi - Női</option>
+            <option>Kezdő - Férfi</option>
+            <option>Kezdő - Női</option>
+            <option>Nyílt - Férfi</option>
+            <option>Nyílt - Női</option>
+            <option>Senior - Férfi</option>
+            <option>Senior - Női</option>
+          </select>
+        </div>
+
         <nav id="events" class="events" aria-label="Eredmények nézetei" hidden></nav>
 
         <div class="event-heading">
           <h2 id="event-title"></h2>
           <span id="event-status" class="status-badge" hidden>Aktív</span>
         </div>
+
+        <p id="empty-results" class="empty-results" role="status" hidden>Nincs eredmény ebben a kategóriában.</p>
 
         <div class="table-wrap">
           <table class="results-table">

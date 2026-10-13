@@ -7,7 +7,7 @@
 - The current POC focuses on public results pages; admin tools and workflows are deferred.
 - Keep the POC minimal: no athlete detail pages or extra features until a working public POC is live.
 - Serve the static HTML frontend through Workers Static Assets; the same Worker handles the Backend For Frontend (BFF) API, which reads from D1.
-- The public endpoint is `GET /api/results?year=2026`. It returns materialized Total standings and current event rows; category filtering and name search remain deferred.
+- The public endpoint is `GET /api/results?year=2026`. It returns materialized Total standings and current event rows; athlete-name search remains deferred.
 - Store uploaded source JSON in R2 and import it into D1 tables.
 - For the POC, upload `results.json` to the R2 `incoming/` prefix with Wrangler. An R2 object-created notification sends it through a Queue to the import Worker; no admin upload UI is needed.
 - The D1 `imports` table records accepted uploads only, with source `event_id`, source `id`, and the archived R2 object key. `upload_receipts` records accepted/rejected incoming object versions for Queue idempotency; rejected files remain archived without an `imports` row.
@@ -23,7 +23,7 @@
 
 ## Navigation and category view
 
-The current first page includes Total and event tabs; category filtering and name search remain later-stage requirements.
+The current first page includes Total and event tabs with a page-wide category filter. Athlete-name search remains a later-stage requirement.
 
 - Results are organized into a **Total** tab and one tab per event.
 - **Total** is the default tab.
@@ -31,7 +31,7 @@ The current first page includes Total and event tabs; category filtering and nam
 - Show result-view buttons when multiple tabs are available; do not show a placeholder for the fourth event.
 - A single page-wide category chooser sits above the result tabs and applies to every tab.
 - The chooser includes **Everyone** and categories. **Everyone** is the default and combines participants from all categories.
-- Category-specific rankings are a must-have.
+- Category-specific rankings are a must-have. When a category is selected, recalculate displayed positions from 1 within that category, preserving competition ties (`1, 2, 2, 4`); Everyone retains the overall rank.
 - Public result rows show rank, athlete name, category, and score; event rows use the source category and score, while Total uses the year category and summed score.
 - Use a table on wider screens and stacked rows/cards on narrow screens, avoiding horizontal scrolling.
 - Provide athlete-name search that filters the currently selected tab and category.
