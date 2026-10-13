@@ -30,7 +30,7 @@ The current first page includes Total and event tabs with a page-wide category f
 - Finished and active events are shown. Active events are visibly marked **Aktív** in the Hungarian UI.
 - Show result-view buttons when multiple tabs are available; do not show a placeholder for the fourth event.
 - A single page-wide category chooser sits above the result tabs and applies to every tab.
-- The chooser includes **Everyone** and categories. **Everyone** is the default and combines participants from all categories.
+- The chooser includes **Everyone** and categories. **Everyone** is the default and combines participants from all categories. Order categories Nyílt, Hobbi, Kezdő, Senior, with Női before Férfi within each group.
 - Category-specific rankings are a must-have. When a category is selected, recalculate displayed positions from 1 within that category, preserving competition ties (`1, 2, 2, 4`); Everyone retains the overall rank.
 - Public result rows show rank, athlete name, category, and score; event rows use the source category and score, while Total uses the year category and summed score.
 - Use a table on wider screens and stacked rows/cards on narrow screens, avoiding horizontal scrolling.
