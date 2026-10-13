@@ -263,9 +263,9 @@ h1 span {
 
   .results-table tbody tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.35rem 1rem;
-    padding: 0.8rem 1rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.2rem 0.5rem;
+    padding: 0.65rem 0.8rem;
     border: 1px solid var(--line);
     border-radius: 0.7rem;
     background: var(--surface);
@@ -281,36 +281,42 @@ h1 span {
   }
 
   .results-table tbody td::before {
-    content: attr(data-label);
-    color: var(--muted);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    display: none;
   }
 
   .results-table td[data-field="rank"] {
+    display: block;
     grid-column: 1;
     grid-row: 1;
+    font-weight: 700;
   }
 
-  .results-table td[data-field="score"] {
-    grid-column: 2;
-    grid-row: 1;
-    align-items: flex-end;
+  .results-table td[data-field="rank"]::after {
+    content: ".";
+    margin-right: 0.15rem;
   }
 
   .results-table td[data-field="name"] {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    margin-top: 0.2rem;
-    font-size: 1.08rem;
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-size: 1.02rem;
     font-weight: 700;
     overflow-wrap: anywhere;
   }
 
+  .results-table td[data-field="score"] {
+    grid-column: 3;
+    grid-row: 1;
+    align-items: flex-end;
+  }
+
   .results-table td[data-field="category"] {
-    grid-column: 1 / -1;
-    grid-row: 3;
+    display: block;
+    grid-column: 2 / -1;
+    grid-row: 2;
+    color: var(--muted);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
   }
 }
