@@ -9,7 +9,7 @@
 - Fetch results once on page load; offer a manual retry if the request fails. No polling.
 - The first page includes a Total tab, one tab per published event, and a page-wide category filter. A selected category is ranked from 1 within that category (competition ties preserved); Everyone retains overall ranks. Name search is deferred.
 - Translate season names for display, show result-view buttons when multiple tabs exist, and default to Total.
-- Mark active events `Aktív`.
+- Show the `Aktív` badge in the selected event heading; keep event-tab labels to season names only.
 - Show rank, name, canonical category, and score using source-style decimal notation.
 - Use the Flow cream/gold palette with a system font; use a table on wide screens and stacked rows on narrow screens without horizontal scrolling.
 

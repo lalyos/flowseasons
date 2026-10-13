@@ -31,7 +31,7 @@ Wrangler or future admin upload
 
 ## Public frontend
 
-- One static results page with **Total** as the default tab, then one tab per event with published data. Mark active events **Aktív**.
+- One static results page with **Total** as the default tab, then one tab per event with published data. Keep tab labels to season names; mark active events with an **Aktív** badge in the selected event heading.
 - A page-wide category chooser includes **Everyone** by default and applies to the selected tab. Selected-category positions are recalculated from 1, preserving competition ties; Everyone retains overall ranks. Athlete-name search filters the selected tab and category.
 - Rows show rank, athlete name, category, and score. Event rows use source categories/scores; Total rows use year categories/summed scores.
 - Preserve separate source ranking entries in event tabs. Match category labels ignoring case, diacritics, and whitespace; keep each exact `source_category` in D1/R2 and use canonical labels for display.

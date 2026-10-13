@@ -93,7 +93,7 @@ async function loadResults() {
         const button = document.createElement("button");
         button.className = "event-button";
         button.type = "button";
-        button.textContent = `${seasonNames[event.season] || event.season}${event.status === "active" ? " · Aktív" : ""}`;
+        button.textContent = seasonNames[event.season] || event.season;
         button.addEventListener("click", () => showEvent(event, buttons));
         buttons.set(event.season, button);
         eventsNav.append(button);
