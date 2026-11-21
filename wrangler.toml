@@ -26,7 +26,7 @@ head_sampling_rate = 0.01
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+run_worker_first = ["/api/*", "/xxxadmin"]
 
 [[queues.consumers]]
 queue = "flowseasons-imports"
