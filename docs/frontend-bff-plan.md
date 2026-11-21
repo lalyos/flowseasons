@@ -19,7 +19,8 @@
 - Read current event metadata/ranking rows and the materialized `total_standings` read model from D1; public requests do not recalculate Total.
 - Return Total rows with `flow_id`; event rows also include the original `athlete_id` and resolved `flow_id`. Names remain source names. IDs are hidden by default and revealed by the debug-only `?showid=true` preference, persisted in a 30-day cookie; `?showid=false` disables it. The parameter is removed from the address after it is applied, and no UI toggle is provided. Scores are converted from integer hundredths. Total includes scores from all published events, and is `active` while any event is active. Its display name comes from the latest event containing the athlete, preferring the best-ranked source row within that event.
 - Return `Cache-Control: no-store` so the next page load sees newly published data.
-- No admin or upload endpoints in the POC.
+- The unlinked POC admin page uses `/api/admin/year-categories`, `/api/admin/multi-registrations`, and `/api/admin/collisions` for category review, source evidence, and reversible collision decisions. Writes atomically update current projections and rebuild Total. These admin endpoints are intentionally unauthenticated until external access control is added.
+- No public upload endpoint.
 
 Response shape:
 

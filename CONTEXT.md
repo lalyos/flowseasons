@@ -40,9 +40,24 @@ A participant group such as `Hobbi - Férfi`, `Kezdő - Női`, `Nyílt - Férfi`
 **Year category**:
 The single category used for an Athlete’s category-specific Total standings for a Flow Seasons year. The latest accepted result import sets it for athletes in that import; an admin may change it afterward.
 
+**Pure category change**:
+A category conflict where one Athlete appears in multiple Categories during a Flow Seasons year under one unchanged Vertical-Life `athlete_id`. It can be resolved by choosing a Year category without reviewing Athlete ID mappings.
+
+**Identity review**:
+A category conflict involving multiple Vertical-Life `athlete_id` values associated with one Flow ID. Confirm the Athlete ID mappings before treating it as a category change.
+
+**Same-event collision**:
+A Flow ID with more than one ranked source entry in the same Event. It must be resolved by an admin; the system must not silently choose or sum the colliding entries.
+
+**Risky merge**:
+A Multi-registration that has a Same-event collision, has at least a twofold difference between positive scores recorded under different Vertical-Life `athlete_id` values, or currently affects the top 10 of its Year category.
+
+**Collision resolution**:
+The current admin decision for a Risky merge: confirm the merge, split one or more Vertical-Life IDs, or select the one result that counts for a Same-event collision. The decision is a replaceable current projection so an admin can change it when new evidence arrives.
+
 **Everyone standings**:
 A combined ranking that includes participants from every category.
 
 **Total standings**:
-The interim ranking for a Flow Seasons year, ordered by each Athlete’s summed `score` from every event with published data, including active events, using current Athlete ID mappings and year categories. It is provisional while any published event is active and final when all four events are finished.
+The interim ranking for a Flow Seasons year, using current Athlete ID mappings and Year categories. It sums all available Event scores until the fourth Event is published, then uses each Athlete’s best three Event scores. An unresolved Same-event collision contributes no score for that Athlete from the affected Event. It is provisional while any published Event is active and final when all four Events are finished.
 _Avoid_: Overall ranking (unless explicitly qualified as the year’s Total standings)

@@ -6,7 +6,7 @@
 
 Build a live, mobile-friendly public results page for **Flow Seasons year 2026**. The POC shows the Total standings and the events with published data. The supplied files cover Spring and Summer (finished) and Autumn (active); do not show a placeholder tab for the fourth event.
 
-Keep the POC focused: no admin UI, public upload endpoint, athlete detail pages, or multi-year selection. Uploads are performed manually with Wrangler to R2; object-created notifications enqueue imports for the Worker. Admin functionality and other years are deferred.
+Keep the POC focused: one unlinked `/xxxadmin` page for year-category review, multi-registration evidence, and collision resolution; no public upload endpoint, athlete detail pages, or multi-year selection. The admin write endpoints are intentionally unauthenticated until external access control is added. Uploads are performed manually with Wrangler to R2; object-created notifications enqueue imports for the Worker. Other admin functionality and years are deferred.
 
 ## Architecture
 

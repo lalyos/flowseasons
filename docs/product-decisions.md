@@ -4,7 +4,7 @@
 
 - The site presents results for one specified Flow Seasons year.
 - A Flow Seasons year has four events.
-- The current POC focuses on public results pages; admin tools and workflows are deferred.
+- The POC includes public results pages and one unlinked `/xxxadmin` page with year-category review, a read-only multi-registration view, and collision resolution; other admin tools and workflows are deferred.
 - Keep the POC minimal: no athlete detail pages or extra features until a working public POC is live.
 - Serve the static HTML frontend through Workers Static Assets; the same Worker handles the Backend For Frontend (BFF) API, which reads from D1.
 - The public endpoint is `GET /api/results?year=2026`. It returns materialized Total standings and current event rows; athlete-name search remains deferred.
@@ -41,10 +41,12 @@ The current first page includes Total and event tabs with a page-wide category f
 ## Public and admin experiences
 
 - The visitor-facing results experience is a single-page app and must be mobile-friendly.
-- Admin tools are separate from the visitor page and may be more elaborate.
+- Admin tools are separate from the visitor page. The POC admin page is not linked from public navigation; it is intentionally unauthenticated until external access control is added.
 - Each person has one stable Flow ID (`flow_id`); multiple original Vertical-Life `athlete_id` values may be associated with it.
 - Event tabs preserve the source entries and categories as provided. If the same person has multiple source entries, they remain separate in the event results.
 - Athlete linking and year-category assignments are separate admin decisions; they affect Total standings only and do not rewrite source event results.
+- The read-only multi-registration view combines current normalized results with archived R2 ranking/startlist data so every linked Vertical-Life ID can show its source event, name, and presence.
+- The collision view persists risky merge cases. Admin decisions update current projections and can be replaced later: confirm a merge, split a Vertical-Life ID, restore the original merge, or select the counted entry for a same-event collision.
 - Changing an athlete link overwrites its current association; earlier athlete-link decisions are not retained.
 - Changing a year-category assignment overwrites the current `(year, flow_id)` value; earlier assignments are not retained.
 
@@ -69,7 +71,8 @@ The current first page includes Total and event tabs with a page-wide category f
 
 ## Total standings
 
-- Total is an interim ranking, summing each athlete’s event `score` from every event with published data, whether that event is active or finished. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
+- Total is an interim ranking using every available event score until the fourth event is published, then each athlete’s best three event scores. Active and finished events both count. Source `athlete_id`s mapped to the same `flow_id` are grouped for Total.
+- A flow ID with multiple ranked entries in the same event is a same-event collision. Until an admin selects the counted entry or splits the IDs, that event contributes no score for that flow ID; colliding entries are never silently summed.
 - For IDs without a confirmed athlete-linking mapping, treat each source `athlete_id` as a separate athlete in Total. IDs mapped to the same `flow_id` are grouped.
 - Resolve each imported `athlete_id` through `athlete-linking` before updating its year category.
 - Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`). For the Total display name, use the source name from the latest event in which the athlete has a result; within that event, prefer the best-ranked source row. Mark Total `Aktív` while any published event is active.
