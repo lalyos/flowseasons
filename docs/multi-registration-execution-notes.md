@@ -22,7 +22,13 @@ Uploaded through the configured R2 `incoming/` → Queue → D1 import pipeline.
 | `flow-2026-2-results.json` | Summer / Nyár | `618` / `7168` | finished | 217 | 2 | `raw-results/618-7168-20261012T155628Z-1303f219bbdb.json` |
 | `flow-2026-3-results.json` | Autumn / Ősz | `676` / `8320` | active | 227 | 3 | `raw-results/676-8320-20261012T155640Z-321509c6b5a0.json` |
 
-Event 1 remains import 1 (Spring / Tavasz, finished, 294 ranking rows). The current API data therefore has three events: Spring, Summer, and Autumn.
+Event 1 remains import 1 (Spring / Tavasz, finished, 294 ranking rows). The table above records the initial Summer/Autumn imports; the latest Autumn snapshot is now import 4.
+
+## Final Autumn snapshot
+
+Uploaded the updated `flow-2026-3-results.json` using `incoming/flow-2026-3-final-676-8320.json`. The upload was accepted as a re-import of the same source result set (`event_id` 676, `id` 8320), replacing the current Autumn snapshot with **finished** results (241 ranking rows). Its archive is `raw-results/676-8320-20261014T060618Z-6fea59c65f19.json`.
+
+The live API now reports Ambrus's final Autumn score as **963.24** (`athlete_id` 9332, `flow_id` `flow-16006`). His Total is **4094.95** (Spring 1230.85 + Summer 1900.86 + Autumn 963.24). All three published events are now finished; the API currently returns 441 Total rows.
 
 ## Applied Flow ID groups
 
@@ -110,7 +116,7 @@ After the event 2 batch, the organizer confirmed another match that was outside 
 |---|---|---|
 | `flow-16006` | Spring/Summer `NAGY Ambrus`; Autumn `AMBRUS Nagy` | 16006, 9332 |
 
-`athlete_id` `9332` was updated from its separate seeded link (`flow-9332`) to `flow-16006`. The names and event rows remain as Vertical-Life supplied them; `year_category` is `Nyílt - Férfi` for both. Spring and Summer total 3131.71; active Autumn's provisional 965.54 is now included, making the current Total 4097.25. The current confirmed set is now **72 multi-registration Flow IDs covering 202 source IDs** (the 71 event 2 groups above plus this group).
+`athlete_id` `9332` was updated from its separate seeded link (`flow-9332`) to `flow-16006`. The names and event rows remain as Vertical-Life supplied them; `year_category` is `Nyílt - Férfi` for both. Spring and Summer total 3131.71. The latest finished Autumn result adds 963.24, for a current Total of 4094.95. The current confirmed set is **72 multi-registration Flow IDs covering 202 source IDs** (the 71 event 2 groups above plus this group).
 
 ## Total BFF and frontend
 
@@ -118,7 +124,7 @@ The BFF returns the precomputed `total_standings` rows in `total.results`, along
 
 The frontend shows tabs in this order: **Total**, **Tavasz**, **Nyár**, **Ősz**, with season-only tab labels. Total is the default. The selected heading shows `Aktív` when the selected event is active; Total is active while any event is active. The page-wide category filter applies to the selected tab and recalculates ranks from 1 within the selected category, preserving ties; Everyone retains overall ranks. Categories are ordered Nyílt, Hobbi, Kezdő, Senior, with Női before Férfi in each group. Name search remains deferred. The Worker and static assets were deployed as version `88dcfb19-04a8-4b2e-a5c7-05cb2d2760ee` to `https://flowseasons.lalyos22.workers.dev`.
 
-Checks run: `npm test` (9 passing), `wrangler deploy --dry-run`, and a live HTTP request confirming 434 Total rows, Ambrus at 4097.25, and current event counts/statuses (Spring 294/finished, Summer 217/finished, Autumn 227/active). Production D1 verification confirmed all **202 linked source IDs** in the **72 confirmed Flow ID groups**. Source JSON files were not modified.
+Checks run: `npm test` (9 passing), `wrangler deploy --dry-run`, and a live HTTP request confirming 441 Total rows, Ambrus at 4094.95, and current event counts/statuses (Spring 294/finished, Summer 217/finished, Autumn 241/finished). Production D1 verification confirmed all **202 linked source IDs** in the **72 confirmed Flow ID groups**.
 
 ## Follow-up for later review
 
