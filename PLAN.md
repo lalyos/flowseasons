@@ -6,7 +6,7 @@
 
 Build a live, mobile-friendly public results page for **Flow Seasons year 2026**. The POC shows the Total standings and the events with published data. The supplied files cover Spring and Summer (finished) and Autumn (active); do not show a placeholder tab for the fourth event.
 
-Keep the POC focused: one unlinked `/xxxadmin` page for year-category review, multi-registration evidence, and collision resolution; no public upload endpoint, athlete detail pages, or multi-year selection. The admin write endpoints are intentionally unauthenticated until external access control is added. Uploads are performed manually with Wrangler to R2; object-created notifications enqueue imports for the Worker. Other admin functionality and years are deferred.
+Keep the POC focused: one unlinked `/xxxadmin` page with Category change for all athletes and multi-reg for candidate discovery, merges, separation decisions, and collision resolution; no public upload endpoint, athlete detail pages, or multi-year selection. The admin write endpoints are intentionally unauthenticated until external access control is added. Uploads are performed manually with Wrangler to R2; object-created notifications enqueue imports for the Worker. Other admin functionality and years are deferred.
 
 ## Architecture
 
@@ -80,7 +80,8 @@ The detailed working proposal is in [`docs/d1-schema-plan.md`](docs/d1-schema-pl
 - **`upload_receipts`** — records each incoming R2 key and ETag once, including rejected outcomes, so at-least-once Queue deliveries are idempotent.
 - **`event_results`** — current normalized ranking rows only. Store `name`, `firstname`, `lastname`, source `athlete_id`, source rank/category, and score in hundredths. Preserve duplicate source entries; a successful re-import replaces the current rows.
 - **`"athlete-linking"`** — current `athlete_id` → `flow_id` mapping. `athlete_id` is unique; `flow_id` is not, allowing many-to-one links. Changes overwrite the current mapping; no mapping history is stored. Unreviewed IDs are seeded one-to-one as `flow-<athlete_id>`; reviewed multi-registrations may share a Flow ID.
-- **`year_categories`** — current assignment keyed by `(year, flow_id)`. Each accepted import overwrites the category for included athletes; later admin edits or imports are last-write-wins.
+- **`year_categories`** — current assignment keyed by `(year, flow_id)`, with `import`, `admin`, or `legacy` origin. Imports update only import-derived assignments. Identity changes explicitly confirm every resulting person's category.
+- **Registration review projections** — stable review cases, explicit VL ID separation pairs and counted-result choices. See [admin review](docs/admin-review.md) for the two-tab workflow and migration.
 - **`total_standings`** — current Worker-generated Total read model keyed by `(year, flow_id)`, containing category, summed score in hundredths, and rank.
 
 Store external numeric identifiers (`event_id`, source `id`, `athlete_id`) as text: they are identifiers, not quantities. Scores use integer hundredths; each event score is rounded to two decimal places on import, then those values are summed for Total. Missing or non-numeric scores become zero.
@@ -90,11 +91,11 @@ Store external numeric identifiers (`event_id`, source `id`, `athlete_id`) as te
 1. Upload each file under `incoming/{unique-name}.json`. R2 object-created notifications filtered to `incoming/` send messages to the import Queue; the Worker archives the exact raw JSON under a unique `raw-results/` key. Archive writes do not retrigger imports.
 2. The source pair `(event_id, id)` identifies the result set. Re-importing a known pair updates that Flow event and appends an accepted `imports` row. An unseen pair creates a new event only if its season slot is unused; otherwise reject it rather than duplicate or overwrite by season name.
 3. Reject uploads with missing/invalid source identifiers, missing/unrecognized status, unknown categories, or an unmappable season name. Archive rejected JSON and record a rejected `upload_receipts` row, but create no `imports` row and leave published D1 data unchanged. Missing/non-numeric ranking scores are zero, not import failures.
-4. Preserve each original `source_category` string in `event_results`; normalize category matching by case, diacritics, and whitespace, then write the canonical category to `year_categories` for each athlete in the accepted import. The latest import wins; an admin may override it later.
+4. Preserve each original `source_category` string in `event_results`; normalize category matching by case, diacritics, and whitespace. Update import-derived Year categories, preserving admin and unknown legacy assignments. Refresh multi-reg candidates manually after publication.
 5. Import only the event metadata and ranking entries needed by the public site; the full original payload, including startlists/routes, remains in R2.
 6. Publish only after the D1 import and Total regeneration both succeed. In that publication step, replace the event’s current ranking rows, set `events.current_import_id`, update year categories, and publish the regenerated Total atomically. If processing fails, keep serving the previous D1 snapshot and leave the incoming object for Queue retry.
 
-Total includes each athlete’s summed score from every event with published data. An absent result contributes zero; an athlete with at least one published result remains in Total. Active event scores appear in their event tab and are included in Total, so Total is marked active while any published event is active. Rank ties use Vertical-Life competition ranking (`1, 1, 3`). Regenerate Total on accepted source imports and athlete-link or year-category changes.
+Total includes each athlete’s available event scores, taking the best three when an athlete has four event scores. Unresolved same-event collisions contribute no score for the affected event. An absent result contributes zero; an athlete with at least one published result remains in Total. Active event scores appear in their event tab and are included in Total, so Total is marked active while any published event is active. Rank ties use Vertical-Life competition ranking (`1, 1, 3`). Regenerate Total on accepted source imports and athlete-link or year-category changes.
 
 ## Documentation and implementation order
 

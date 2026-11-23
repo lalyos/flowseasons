@@ -4,7 +4,7 @@
 
 - The site presents results for one specified Flow Seasons year.
 - A Flow Seasons year has four events.
-- The POC includes public results pages and one unlinked `/xxxadmin` page with year-category review, a read-only multi-registration view, and collision resolution; other admin tools and workflows are deferred.
+- The POC includes public results pages and one unlinked `/xxxadmin` page with two workspaces: Category change for all athletes and multi-reg for candidate discovery and reversible identity decisions. See [admin review](admin-review.md).
 - Keep the POC minimal: no athlete detail pages or extra features until a working public POC is live.
 - Serve the static HTML frontend through Workers Static Assets; the same Worker handles the Backend For Frontend (BFF) API, which reads from D1.
 - The public endpoint is `GET /api/results?year=2026`. It returns materialized Total standings and current event rows; athlete-name search remains deferred.
@@ -36,7 +36,7 @@ The current first page includes Total and event tabs with a page-wide category f
 - Use a table on wider screens and stacked rows/cards on narrow screens, avoiding horizontal scrolling.
 - Provide athlete-name search that filters the currently selected tab and category.
 - Normalize imported category labels for matching by ignoring case, diacritics, and whitespace; resolve them to the eight canonical Categories. Use canonical labels for display/filtering and preserve the uploaded source JSON unchanged.
-- Each athlete has one **year category** for the whole year; accepted imports update it, and an admin may override it. It affects Total standings only.
+- Each athlete has one **year category** for the whole year. Imports update import-derived assignments; explicit admin assignments and unknown legacy assignments are preserved. It affects Total standings only.
 
 ## Public and admin experiences
 
@@ -45,8 +45,10 @@ The current first page includes Total and event tabs with a page-wide category f
 - Each person has one stable Flow ID (`flow_id`); multiple original Vertical-Life `athlete_id` values may be associated with it.
 - Event tabs preserve the source entries and categories as provided. If the same person has multiple source entries, they remain separate in the event results.
 - Athlete linking and year-category assignments are separate admin decisions; they affect Total standings only and do not rewrite source event results.
-- The read-only multi-registration view combines current normalized results with archived R2 ranking/startlist data so every linked Vertical-Life ID can show its source event, name, and presence.
-- The collision view persists risky merge cases. Admin decisions update current projections and can be replaced later: confirm a merge, split a Vertical-Life ID, restore the original merge, or select the counted entry for a same-event collision.
+- Category change lists all known people with editable Year categories, same-VL-ID category-change flags, and assignment-mismatch flags. Identity questions are not category conflicts.
+- Multi-reg combines current normalized results with archived R2 ranking/startlist data, scanning all IDs across all events on explicit candidate refresh. Refresh never changes mappings or scores; run it after each upload.
+- Stable registration review cases can span multiple current Flow IDs and survive merges/splits. Admins can merge a subset, keep others separate, revise decisions, and choose the counted entry for any resulting same-event collision. Every resulting person must have a confirmed Year category.
+- Keep-separate decisions are persisted between VL ID pairs. Unchanged refreshes preserve reviewed status; new members or changed evidence reopen review. Existing legacy collision cases and latest explicit split decisions are migrated conservatively.
 - Changing an athlete link overwrites its current association; earlier athlete-link decisions are not retained.
 - Changing a year-category assignment overwrites the current `(year, flow_id)` value; earlier assignments are not retained.
 
@@ -67,7 +69,7 @@ The current first page includes Total and event tabs with a page-wide category f
 - Publish a new upload only after its D1 import and Total regeneration both succeed; if either fails, keep the previous snapshot public and retain the raw R2 upload for diagnosis or retry.
 - Keep every raw JSON upload in R2 under a unique `raw-results/{event_id}-{id}-{YYYYMMDDTHHMMSSZ}-{upload-hash}.json` key; D1 stores the current imported snapshot.
 - Use D1 Time Travel for database restoration; it restores the whole D1 database, not R2 objects, to an earlier point, with a retention window of 7 days on Workers Free or 30 days on Workers Paid. Confirm the deployed database uses D1's production storage backend.
-- Uploaded source data remains unchanged in R2. `event_results.source_category` preserves the exact source label; `year_categories.category` stores the canonical label from the latest accepted import. Admin edits affect only `year_categories` and do not rewrite event source results.
+- Uploaded source data remains unchanged in R2. `event_results.source_category` preserves the exact source label; `year_categories.category` stores the canonical current assignment with `import`, `admin`, or `legacy` origin. Admin edits do not rewrite event source results.
 
 ## Total standings
 
@@ -76,7 +78,7 @@ The current first page includes Total and event tabs with a page-wide category f
 - For IDs without a confirmed athlete-linking mapping, treat each source `athlete_id` as a separate athlete in Total. IDs mapped to the same `flow_id` are grouped.
 - Resolve each imported `athlete_id` through `athlete-linking` before updating its year category.
 - Total ranks by summed score using Vertical-Life’s competition-ranking rule: ties share a rank and subsequent ranks skip (for example, `1, 1, 3`). For the Total display name, use the source name from the latest event in which the athlete has a result; within that event, prefer the best-ranked source row. Mark Total `Aktív` while any published event is active.
-- Total uses each athlete’s current year category; Everyone combines all categories. Last successful write wins: imports update athletes present in the file, while admin edits can override the current value.
+- Total uses each athlete’s current year category; Everyone combines all categories. Imports update only import-derived categories; explicit admin assignments and unknown legacy assignments are not silently overwritten.
 - A missing result in a published event contributes zero; an athlete with at least one result in a published event remains in Total.
 - An active event’s provisional score is shown in its event tab and included in Total; therefore Total is provisional while any published event is active.
 - The Total ranking becomes final after all four events are finished.

@@ -38,13 +38,25 @@ An event that is in progress and whose results are provisional.
 A participant group such as `Hobbi - Férfi`, `Kezdő - Női`, `Nyílt - Férfi`, or `Senior - Női`; Senior is the over-40 group.
 
 **Year category**:
-The single category used for an Athlete’s category-specific Total standings for a Flow Seasons year. The latest accepted result import sets it for athletes in that import; an admin may change it afterward.
+The single category used for an Athlete’s category-specific Total standings for a Flow Seasons year. Source results supply a default, but an explicit admin assignment takes precedence and is confirmed separately for each person after an identity change.
 
 **Pure category change**:
 A category conflict where one Athlete appears in multiple Categories during a Flow Seasons year under one unchanged Vertical-Life `athlete_id`. It can be resolved by choosing a Year category without reviewing Athlete ID mappings.
 
 **Identity review**:
-A category conflict involving multiple Vertical-Life `athlete_id` values associated with one Flow ID. Confirm the Athlete ID mappings before treating it as a category change.
+The assessment of whether multiple Vertical-Life registrations belong to one Athlete or to different people. Similar names can prompt review whether the registrations are already linked or still separate.
+
+**Registration review case**:
+A persistent group of potentially related Vertical-Life registrations, retained through merges and splits. Membership is a review aid, not proof that the registrations belong to one person.
+
+**Keep separate decision**:
+An explicit, revisable admin decision that two Vertical-Life registrations represent different people. Repeated candidate detection does not by itself revoke that decision.
+
+**Assignment mismatch**:
+A Year category that does not occur in an Athlete’s current ranked source results. It is a review signal, not necessarily an error, because an intentional admin assignment may differ from source categories.
+
+**Overlapping event**:
+An Event with more than one ranked entry within a Registration review case, including entries currently assigned to different people. Merging those entries would create a Same-event collision.
 
 **Same-event collision**:
 A Flow ID with more than one ranked source entry in the same Event. It must be resolved by an admin; the system must not silently choose or sum the colliding entries.
@@ -53,7 +65,7 @@ A Flow ID with more than one ranked source entry in the same Event. It must be r
 A Multi-registration that has a Same-event collision, has at least a twofold difference between positive scores recorded under different Vertical-Life `athlete_id` values, or currently affects the top 10 of its Year category.
 
 **Collision resolution**:
-The current admin decision for a Risky merge: confirm the merge, split one or more Vertical-Life IDs, or select the one result that counts for a Same-event collision. The decision is a replaceable current projection so an admin can change it when new evidence arrives.
+The current, revisable admin decision about who owns the registrations in an Identity review and which result counts for any Same-event collision. Each resulting person has a separately confirmed Year category.
 
 **Everyone standings**:
 A combined ranking that includes participants from every category.

@@ -1,6 +1,6 @@
 # D1 Schema Plan
 
-**Status:** Implemented in [`migrations/0001_initial.sql`](../migrations/0001_initial.sql) and [`migrations/0002_import_upload_receipts.sql`](../migrations/0002_import_upload_receipts.sql).
+**Status:** Core schema implemented in migrations 0001–0002, collision projections in 0003–0004, and consolidated registration review in [`0005_registration_review.sql`](../migrations/0005_registration_review.sql). See [admin review](admin-review.md) for migration and workflow details.
 
 ## Tables
 
@@ -53,9 +53,10 @@ Current year-category assignment for an Athlete.
 - `year`.
 - `flow_id`.
 - `category`.
+- `origin` — `import`, `admin`, or `legacy`; existing unknown provenance is conservatively `legacy`.
 - Primary key: `(year, flow_id)`; changing the assignment overwrites it.
 
-Each accepted import resolves `athlete_id` through `"athlete-linking"` and upserts the canonical category for athletes present in that import. Later accepted imports and admin edits overwrite the current value.
+Each accepted import resolves `athlete_id` through `"athlete-linking"` and updates only import-derived categories. Explicit admin and unknown legacy assignments survive later uploads. Identity decisions must confirm the Year category of every resulting person.
 
 ### `total_standings`
 Current Worker-generated Total read model, read by the BFF rather than recalculated per request.
@@ -63,6 +64,16 @@ Current Worker-generated Total read model, read by the BFF rather than recalcula
 - `year`, `flow_id`, `category`, `score_hundredths`, and `rank`.
 - Primary key: `(year, flow_id)`.
 - Regenerate after a successfully published source import or a later athlete-link/category change.
+
+### Registration review projections
+
+- `registration_review_cases` — stable case IDs independent of current Flow IDs; member VL IDs, evidence/reasons, evidence signature, reviewed signature, and the latest replaceable decision.
+- `registration_separations` — ordered VL ID pairs explicitly kept separate; removed for pairs deliberately re-merged.
+- `event_result_choices` — one selected entry per Flow ID/import snapshot for same-event collisions. A trigger clears selections before their source entries are replaced.
+- `registration_review_write_guards` — transient assertions in atomic decision batches, used to reject concurrent identity/import changes.
+- `collision_cases` — legacy data retained read-only after migration 0005.
+
+Cases are review containers, not identity groups. Candidate refresh changes only review projections, not mappings or scores. Saving a decision atomically updates links, separation decisions, all resulting Year categories, counted entries, reviewed state, and Total.
 
 ## Shared rules
 
