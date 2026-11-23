@@ -284,9 +284,10 @@ async function loadMultiRegistrations() {
 }
 
 function renderCollisions() {
-  const visible = collisionReasonFilter.value
-    ? collisions.filter((collision) => collision.reasons.includes(collisionReasonFilter.value))
-    : collisions;
+  const visible = collisions.filter((collision) => {
+    if (collisionReasonFilter.value === "to_decide") return !collision.resolution;
+    return !collisionReasonFilter.value || collision.reasons.includes(collisionReasonFilter.value);
+  });
   collisionCandidates.replaceChildren(...visible.map(renderCollision));
   const unresolved = visible.filter((collision) => !collision.resolution).length;
   collisionStatus.textContent = `${visible.length} / ${collisions.length} kockázatos összevonás, ${unresolved} döntés nélkül.`;

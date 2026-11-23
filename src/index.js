@@ -230,12 +230,18 @@ async function collisionCases(env) {
   if (detected.length) {
     await env.DB.batch(detected.map(({ registration, reasons }) => {
       const athleteIds = registration.athlete_ids.map((athlete) => athlete.athlete_id).sort();
-      const caseKey = `multi:${athleteIds.join("|")}`;
+      const caseKey = `multi:${registration.flow_id}`;
       return env.DB.prepare(`
         INSERT INTO collision_cases (
           case_key, original_flow_id, athlete_ids_json, evidence_json, reasons_json, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(case_key) DO UPDATE SET
+          resolution_json = CASE
+            WHEN collision_cases.athlete_ids_json = excluded.athlete_ids_json
+              THEN collision_cases.resolution_json
+            ELSE NULL
+          END,
+          athlete_ids_json = excluded.athlete_ids_json,
           evidence_json = excluded.evidence_json,
           reasons_json = excluded.reasons_json,
           updated_at = excluded.updated_at

@@ -154,6 +154,30 @@ test("multi-registration admin combines current results with ranking and startli
   });
 });
 
+test("collision case identity stays stable as new VL IDs join a Flow ID", async () => {
+  const writes = [];
+  const env = mockEnv();
+  const prepare = env.DB.prepare;
+  env.DB.prepare = (sql) => {
+    if (sql.includes("FROM collision_cases")) return { all: async () => ({ results: [] }) };
+    if (sql.includes("WITH category_ranks")) {
+      return { bind: () => ({ all: async () => ({ results: [] }) }) };
+    }
+    return prepare(sql);
+  };
+  env.DB.batch = async (statements) => { writes.push(...statements); return []; };
+
+  const response = await worker.fetch(
+    new Request("https://example.test/api/admin/collisions?year=2026"), env,
+  );
+  assert.equal(response.status, 200);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].values[0], "multi:flow-18495");
+  assert.deepEqual(JSON.parse(writes[0].values[2]), ["18495", "20148", "23774", "23775"]);
+  assert.match(writes[0].sql, /athlete_ids_json = excluded\.athlete_ids_json/);
+  assert.match(writes[0].sql, /THEN collision_cases\.resolution_json\s+ELSE NULL/);
+});
+
 test("admin rejects non-canonical categories without writing", async () => {
   let batchCalled = false;
   const response = await worker.fetch(new Request("https://example.test/api/admin/year-categories?year=2026", {
