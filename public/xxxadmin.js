@@ -1,326 +1,282 @@
 const categories = [
-  "Nyílt - Női", "Nyílt - Férfi",
-  "Hobbi - Női", "Hobbi - Férfi",
-  "Kezdő - Női", "Kezdő - Férfi",
-  "Senior - Női", "Senior - Férfi",
+  'Nyílt - Női', 'Nyílt - Férfi', 'Hobbi - Női', 'Hobbi - Férfi',
+  'Kezdő - Női', 'Kezdő - Férfi', 'Senior - Női', 'Senior - Férfi',
 ];
-const seasonNames = { Spring: "Tavasz", Summer: "Nyár", Autumn: "Ősz", Winter: "Tél" };
-const presenceNames = {
-  ranking_and_startlist: "Rangsor + rajtlista",
-  ranking: "Csak rangsor",
-  startlist: "Csak rajtlista",
+const seasonNames = { Spring: 'Tavasz', Summer: 'Nyár', Autumn: 'Ősz', Winter: 'Tél' };
+const seasonOrder = { Spring: 1, Summer: 2, Autumn: 3, Winter: 4 };
+const reasonNames = {
+  potential_match: 'potential match', merged: 'merged',
+  same_event_collision: 'same-event collision', overlapping_event: 'overlapping event',
+  score_disparity: '2× score difference', top_ten: 'top-10 impact',
 };
-const collisionReasonNames = {
-  same_event_collision: "same-event collision",
-  score_disparity: "2× score difference",
-  top_ten: "top-10 impact",
-};
-const status = document.querySelector("#admin-status");
-const candidates = document.querySelector("#admin-candidates");
-const issueFilter = document.querySelector("#admin-issue-filter");
-const multiRegistrationStatus = document.querySelector("#multi-registration-status");
-const multiRegistrationCandidates = document.querySelector("#multi-registration-candidates");
-const collisionStatus = document.querySelector("#collision-status");
-const collisionCandidates = document.querySelector("#collision-candidates");
-const collisionReasonFilter = document.querySelector("#collision-reason-filter");
-const tabs = [...document.querySelectorAll('[role="tab"]')];
-const panels = [...document.querySelectorAll('[role="tabpanel"]')];
-let athletes = [];
-let collisions = [];
+const $ = selector => document.querySelector(selector);
+let athletes = [], reviews = [];
 
-function textElement(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  element.textContent = text;
-  return element;
+function element(tag, text, className) {
+  const el = document.createElement(tag);
+  if (text != null) el.textContent = text;
+  if (className) el.className = className;
+  return el;
 }
 
-function evidenceTable(columns, rows) {
-  const wrap = document.createElement("div");
-  wrap.className = "admin-table-wrap";
-  const table = document.createElement("table");
-  table.className = "admin-evidence-table";
-  const headRow = document.createElement("tr");
-  for (const column of columns) {
-    const heading = textElement("th", column.numeric ? "numeric" : "", column.label);
-    heading.scope = "col";
-    headRow.append(heading);
+async function api(path, body) {
+  const response = await fetch(`/api/admin/${path}?year=2026`, body === undefined
+    ? { cache: 'no-store' }
+    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'A kérés nem sikerült.');
+  return data;
+}
+
+function warnings(data) {
+  $('#admin-warning').textContent = data.warnings?.length
+    ? `Hiányzó forrásarchívumok: ${data.warnings.length}. Az identitásdöntések mentése és a jelöltfrissítés blokkolva.` : '';
+}
+
+function select(options, value, labelText) {
+  const label = element('label', labelText, 'admin-filter');
+  const input = element('select');
+  for (const [value, text] of options) {
+    const option = element('option', text);
+    option.value = value;
+    input.append(option);
   }
-  const head = document.createElement("thead");
-  head.append(headRow);
-  const body = document.createElement("tbody");
+  input.value = value || '';
+  label.append(input);
+  return { label, input };
+}
+
+function categorySelect(value, labelText) {
+  return select([['', 'Kategória választása…'], ...categories.map(c => [c, c])], value, labelText);
+}
+
+function table(rows, showFlow = false) {
+  const columns = [['season', 'Esemény'], ['athlete_id', 'VL ID'], ...(showFlow ? [['flow_id', 'Aktuális Flow ID']] : []),
+    ['name', 'Név'], ['category', 'Kategória'], ['presence', 'Forrásban'], ['rank', 'Helyezés'], ['score', 'Pont']];
+  const wrap = element('div', null, 'admin-table-wrap');
+  const table = element('table', null, 'admin-evidence-table');
+  const head = element('thead'), heading = element('tr'), body = element('tbody');
+  for (const [key, name] of columns) {
+    const th = element('th', name, ['rank', 'score'].includes(key) ? 'numeric' : '');
+    th.scope = 'col';
+    heading.append(th);
+  }
+  head.append(heading);
   for (const row of rows) {
-    const tableRow = document.createElement("tr");
-    for (const column of columns) {
-      tableRow.append(textElement("td", column.numeric ? "numeric" : "", row[column.key] ?? "—"));
-    }
-    body.append(tableRow);
+    const tr = element('tr');
+    const presence = [row.ranking ? 'rangsor' : '', row.startlist ? 'rajtlista' : ''].filter(Boolean).join(' + ');
+    const display = { ...row, season: seasonNames[row.season] || row.season,
+      presence: presence + (row.historical ? ' (archív)' : '') };
+    for (const [key] of columns) tr.append(element('td', display[key] ?? '—', ['rank', 'score'].includes(key) ? 'numeric' : ''));
+    body.append(tr);
   }
   table.append(head, body);
   wrap.append(table);
   return wrap;
 }
 
-function renderCandidate(athlete, index) {
-  const card = document.createElement("article");
-  card.className = "admin-candidate";
-  card.append(textElement("h2", "", athlete.name || athlete.flow_id));
-  card.append(textElement(
-    "p",
-    athlete.issue_type === "category_change" ? "admin-issue-type" : "admin-issue-type admin-issue-type-danger",
-    athlete.issue_type === "category_change" ? "kategóriaváltás" : "id-problem",
-  ));
-  card.append(textElement(
-    "p",
-    "admin-identifiers",
-    `Flow ID: ${athlete.flow_id} · Vertical-Life IDs: ${athlete.athlete_ids.join(", ")}`,
-  ));
+function badge(text, danger = false) {
+  return element('span', text, `admin-issue-type${danger ? ' admin-issue-type-danger' : ''}`);
+}
 
-  card.append(evidenceTable([
-    { key: "season", label: "Esemény" },
-    { key: "name", label: "Név" },
-    { key: "category", label: "Kategória" },
-    { key: "rank", label: "Helyezés", numeric: true },
-    { key: "score", label: "Pont", numeric: true },
-    { key: "athlete_id", label: "VL ID" },
-  ], athlete.sources.map((source) => ({
-    ...source,
-    season: seasonNames[source.season] || source.season,
-  }))));
-
-  const form = document.createElement("form");
-  form.className = "admin-category-form";
-  const label = document.createElement("label");
-  label.htmlFor = `year-category-${index}`;
-  label.textContent = "Végleges kategória";
-  const select = document.createElement("select");
-  select.id = label.htmlFor;
-  select.required = true;
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Kategória választása…";
-  select.append(placeholder);
-  for (const category of categories) {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    option.selected = category === athlete.year_category;
-    select.append(option);
-  }
-
-  const save = document.createElement("button");
-  save.className = "admin-save";
-  save.type = "submit";
-  save.textContent = "Mentés";
-  const result = textElement("p", "admin-save-status", "");
-  result.setAttribute("role", "status");
-  form.append(label, select, save, result);
-  form.addEventListener("submit", async (event) => {
+function renderCategory(athlete) {
+  const card = element('article', null, 'admin-candidate');
+  card.append(element('h2', athlete.name), element('p', `${athlete.flow_id} · VL: ${athlete.athlete_ids.join(', ')}`, 'admin-identifiers'));
+  if (athlete.category_change) card.append(badge('kategóriaváltás — azonos VL ID'));
+  if (athlete.assignment_mismatch) card.append(badge('assignment mismatch', true));
+  card.append(element('p', `Year category eredete: ${athlete.origin || 'nincs'}`, 'admin-identifiers'), table(athlete.sources));
+  const form = element('form', null, 'admin-category-form');
+  const category = categorySelect(athlete.year_category, `Year category — ${athlete.flow_id}`);
+  category.input.required = true;
+  const save = element('button', 'Mentés', 'admin-save');
+  save.type = 'submit';
+  const result = element('p', '', 'admin-save-status');
+  result.setAttribute('role', 'status');
+  form.append(category.label, save, result);
+  form.addEventListener('submit', async event => {
     event.preventDefault();
-    if (!select.value) return;
-
     save.disabled = true;
-    result.textContent = "Mentés…";
     try {
-      const response = await fetch("/api/admin/year-categories?year=2026", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ flow_id: athlete.flow_id, category: select.value }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "A mentés nem sikerült.");
-      athlete.year_category = data.category;
-      result.textContent = `Mentve: ${data.category}`;
-    } catch (error) {
-      result.textContent = error instanceof Error ? error.message : "A mentés nem sikerült.";
-    } finally {
-      save.disabled = false;
-    }
+      await api('year-categories', { flow_id: athlete.flow_id, category: category.input.value });
+      await loadAll();
+      $('#category-status').textContent += ' · Mentve. Csak a Total változott.';
+    } catch (error) { result.textContent = error.message; }
+    finally { save.disabled = false; }
   });
   card.append(form);
   return card;
 }
 
-function registrationRows(registration) {
-  return registration.athlete_ids.flatMap((athlete) => athlete.sources.length
-    ? athlete.sources.map((source) => ({
-      ...source,
-      athlete_id: athlete.athlete_id,
-      season: seasonNames[source.season] || source.season,
-      presence: presenceNames[source.presence],
-    }))
-    : [{ athlete_id: athlete.athlete_id }]);
+function renderCategories() {
+  const term = $('#category-search').value.toLocaleLowerCase('hu');
+  const filter = $('#category-filter').value;
+  const visible = athletes.filter(a => (!filter || a[filter]) &&
+    `${a.name} ${a.flow_id} ${a.athlete_ids.join(' ')}`.toLocaleLowerCase('hu').includes(term));
+  $('#category-status').textContent = `${visible.length} / ${athletes.length} sportoló`;
+  $('#category-candidates').replaceChildren(...visible.map(renderCategory));
 }
 
-function registrationTable(registration) {
-  return evidenceTable([
-    { key: "season", label: "Esemény" },
-    { key: "athlete_id", label: "VL ID" },
-    { key: "name", label: "Név" },
-    { key: "category", label: "Kategória" },
-    { key: "presence", label: "Forrásban" },
-    { key: "rank", label: "Helyezés", numeric: true },
-    { key: "score", label: "Pont", numeric: true },
-  ], registrationRows(registration));
-}
-
-function renderMultiRegistration(registration) {
-  const card = document.createElement("article");
-  card.className = "admin-candidate";
-  card.append(textElement("h2", "", registration.name || registration.flow_id));
-  card.append(textElement(
-    "p",
-    "admin-identifiers",
-    `Flow ID: ${registration.flow_id} · ${registration.athlete_ids.length} Vertical-Life ID`,
-  ));
-  card.append(registrationTable(registration));
-  return card;
-}
-
-function collisionButton(label, caseKey, action, extra = {}) {
-  const button = textElement("button", "admin-save", label);
-  button.type = "button";
-  button.addEventListener("click", async () => {
-    if ((action === "split" || action === "merge") && !window.confirm("Biztosan módosítod az azonosító-összerendelést?")) return;
-    button.disabled = true;
+function renderReview(review) {
+  const card = element('article', null, 'admin-candidate');
+  const rows = review.members.flatMap(m => m.sources.length
+    ? m.sources.map(s => ({ ...s, athlete_id: m.athlete_id, flow_id: m.flow_id }))
+    : [{ athlete_id: m.athlete_id, flow_id: m.flow_id }]);
+  card.append(element('h2', rows.find(r => r.name)?.name || review.case_id));
+  const badges = element('div', null, 'collision-reasons');
+  badges.append(badge(review.to_decide ? 'to-decide' : 'reviewed', review.to_decide));
+  for (const reason of review.reasons) badges.append(badge(reasonNames[reason] || reason, reason === 'same_event_collision'));
+  if (review.separations.length) badges.append(badge('kept separate'));
+  card.append(badges, table(rows, true));
+  card.append(element('p', 'A hasonló név nem bizonyítja, hogy egy személy. A táblázat az aktuális állapotot mutatja; a változásokat lent állíthatod be.'));
+  const form = element('form');
+  const assignments = new Map(review.members.map(m => [m.athlete_id, m.flow_id]));
+  const categoryDraft = new Map();
+  const choicesDraft = new Map(review.choices.map(c => [JSON.stringify([c.import_id, c.flow_id]), c.entry_id]));
+  const selection = new Map();
+  const assignmentInputs = new Map();
+  const options = [...new Set(review.members.flatMap(m => [m.flow_id, `flow-${m.athlete_id}`]))].map(f => [f, f]);
+  const controls = element('div', null, 'review-assignments');
+  const categoriesArea = element('div', null, 'review-categories');
+  const choicesArea = element('div', null, 'review-choices');
+  const actionBar = element('div', null, 'collision-actions');
+  const merge = element('button', 'Kijelöltek összevonása', 'admin-save');
+  const separate = element('button', 'Mind külön személy', 'admin-save');
+  merge.type = separate.type = 'button';
+  actionBar.append(merge, separate);
+  function updateProjection() {
+    for (const [id, input] of assignmentInputs) input.value = assignments.get(id);
+    const flows = [...new Set(assignments.values())];
+    const categoryFields = [];
+    for (const flow of flows) {
+      const ids = [...assignments].filter(([, target]) => target === flow).map(([id]) => id);
+      const unchanged = review.members.filter(m => m.flow_id === flow).map(m => m.athlete_id).sort().join('|') === [...ids].sort().join('|');
+      const current = review.categories.find(c => c.flow_id === flow);
+      const latest = rows.filter(r => ids.includes(r.athlete_id) && r.entry_id != null && r.category)
+        .sort((a, b) => seasonOrder[b.season] - seasonOrder[a.season] || (a.rank ?? Infinity) - (b.rank ?? Infinity))[0];
+      const key = JSON.stringify([flow, [...ids].sort()]);
+      const category = categorySelect(categoryDraft.get(key) || (unchanged ? current?.year_category : latest?.category), `Year category: ${flow} (VL ${ids.join(', ')})`);
+      category.input.required = true;
+      categoryDraft.set(key, category.input.value);
+      category.input.addEventListener('change', () => categoryDraft.set(key, category.input.value));
+      categoryFields.push(category.label);
+    }
+    categoriesArea.replaceChildren(element('h3', 'Erősítsd meg minden személy éves kategóriáját'), ...categoryFields);
+    const groups = new Map();
+    for (const row of rows.filter(r => r.entry_id != null)) {
+      const flow = assignments.get(row.athlete_id);
+      const key = JSON.stringify([row.import_id, flow]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    const choiceFields = [];
+    for (const [key, entries] of groups) {
+      if (entries.length < 2) continue;
+      const choice = select([['', 'Eredmény választása…'], ...entries.map(r => [String(r.entry_id), `VL ${r.athlete_id}: ${r.rank ?? '—'}. hely · ${r.score} pont`])],
+        String(choicesDraft.get(key) || ''), `same-event collision — ${seasonNames[entries[0].season]} · ${JSON.parse(key)[1]}`);
+      choice.input.required = true;
+      choice.input.addEventListener('change', () => choicesDraft.set(key, Number(choice.input.value)));
+      choiceFields.push(choice.label);
+    }
+    choicesArea.replaceChildren(...choiceFields);
+    return { flows, groups };
+  }
+  for (const member of review.members) {
+    const row = element('div', null, 'review-assignment');
+    const checkLabel = element('label', `VL ${member.athlete_id}`);
+    const check = element('input');
+    check.type = 'checkbox';
+    checkLabel.prepend(check);
+    selection.set(member.athlete_id, check);
+    const destination = select(options, member.flow_id, `VL ${member.athlete_id} személye`);
+    destination.input.addEventListener('change', () => { assignments.set(member.athlete_id, destination.input.value); updateProjection(); });
+    assignmentInputs.set(member.athlete_id, destination.input);
+    row.append(checkLabel, destination.label);
+    controls.append(row);
+  }
+  merge.addEventListener('click', () => {
+    const ids = [...selection].filter(([, check]) => check.checked).map(([id]) => id);
+    if (ids.length < 2) { result.textContent = 'Legalább két VL ID-t jelölj ki.'; return; }
+    const target = assignments.get(ids[0]);
+    for (const id of ids) assignments.set(id, target);
+    updateProjection();
+  });
+  separate.addEventListener('click', () => {
+    for (const member of review.members) assignments.set(member.athlete_id, `flow-${member.athlete_id}`);
+    updateProjection();
+  });
+  const save = element('button', 'Döntés mentése / módosítása', 'admin-save');
+  save.type = 'submit';
+  const result = element('p', '', 'admin-save-status');
+  result.setAttribute('role', 'status');
+  form.append(controls, actionBar, categoriesArea, choicesArea, save, result);
+  updateProjection();
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!window.confirm('Mented az összerendeléseket, a különválasztásokat és az éves kategóriákat? A Total újraszámolódik.')) return;
+    const { flows, groups } = updateProjection();
+    const confirmedCategories = flows.map(flow => {
+      const ids = [...assignments].filter(([, f]) => f === flow).map(([id]) => id).sort();
+      return { flow_id: flow, category: categoryDraft.get(JSON.stringify([flow, ids])) };
+    });
+    const choices = [...groups].filter(([, entries]) => entries.length > 1).map(([key]) => {
+      const [import_id, flow_id] = JSON.parse(key);
+      return { import_id, flow_id, entry_id: choicesDraft.get(key) };
+    });
+    save.disabled = true;
     try {
-      const response = await fetch("/api/admin/collisions?year=2026", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ case_key: caseKey, action, ...extra }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "A döntést nem sikerült menteni.");
-      await Promise.all([loadCandidates(), loadMultiRegistrations(), loadCollisions()]);
-    } catch (error) {
-      collisionStatus.textContent = error instanceof Error ? error.message : "Mentési hiba.";
-      button.disabled = false;
-    }
+      await api('registration-reviews', { case_id: review.case_id, signature: review.signature,
+        assignments: [...assignments].map(([athlete_id, flow_id]) => ({ athlete_id, flow_id })), categories: confirmedCategories, choices });
+      await loadAll();
+    } catch (error) { result.textContent = error.message; save.disabled = false; }
   });
-  return button;
-}
-
-function renderCollision(collision) {
-  const registration = collision.evidence;
-  const card = document.createElement("article");
-  card.className = "admin-candidate";
-  card.append(textElement("h2", "", registration.name || collision.original_flow_id));
-  const badges = document.createElement("div");
-  badges.className = "collision-reasons";
-  for (const reason of collision.reasons) {
-    badges.append(textElement(
-      "span",
-      reason === "same_event_collision" ? "admin-issue-type admin-issue-type-danger" : "admin-issue-type",
-      collisionReasonNames[reason] || reason,
-    ));
-  }
-  card.append(badges);
-  card.append(textElement("p", "admin-identifiers", `Flow ID: ${collision.original_flow_id}`));
-  card.append(registrationTable(registration));
-  card.append(textElement(
-    "p",
-    "collision-resolution",
-    collision.resolution ? `Aktuális döntés: ${collision.resolution.action}` : "Nincs admin döntés.",
-  ));
-
-  const actions = document.createElement("div");
-  actions.className = "collision-actions";
-  actions.append(
-    collisionButton("Összevonás megerősítése", collision.case_key, "confirm_merge"),
-    collisionButton("Eredeti összevonás visszaállítása", collision.case_key, "merge"),
-  );
-  for (const athleteId of collision.athlete_ids) {
-    actions.append(collisionButton(`VL ${athleteId} különválasztása`, collision.case_key, "split", { athlete_id: athleteId }));
-  }
-  if (collision.reasons.includes("same_event_collision")) {
-    for (const row of registrationRows(registration).filter((source) => source.entry_id != null)) {
-      actions.append(collisionButton(
-        `${row.season}: VL ${row.athlete_id} eredménye számítson`,
-        collision.case_key,
-        "select_result",
-        { entry_id: row.entry_id },
-      ));
-    }
-  }
-  card.append(actions);
+  card.append(form);
   return card;
 }
 
-function renderCandidates() {
-  const visible = issueFilter.value
-    ? athletes.filter((athlete) => athlete.issue_type === issueFilter.value)
-    : athletes;
-  candidates.replaceChildren(...visible.map(renderCandidate));
-  status.textContent = athletes.length
-    ? `${visible.length} / ${athletes.length} sportoló megjelenítve.`
-    : "Nincs több forráskategóriával rendelkező sportoló.";
-}
-
-async function loadCandidates() {
-  try {
-    const response = await fetch("/api/admin/year-categories?year=2026", { cache: "no-store" });
-    if (!response.ok) throw new Error("A kategóriaütközéseket nem sikerült betölteni.");
-    const data = await response.json();
-    athletes = data.athletes;
-    renderCandidates();
-  } catch (error) {
-    status.textContent = error instanceof Error ? error.message : "Betöltési hiba.";
-  }
-}
-
-async function loadMultiRegistrations() {
-  try {
-    const response = await fetch("/api/admin/multi-registrations?year=2026", { cache: "no-store" });
-    if (!response.ok) throw new Error("A többszörös regisztrációkat nem sikerült betölteni.");
-    const data = await response.json();
-    multiRegistrationCandidates.replaceChildren(...data.registrations.map(renderMultiRegistration));
-    multiRegistrationStatus.textContent = data.registrations.length
-      ? `${data.registrations.length} sportoló több Vertical-Life ID-val.`
-      : "Nincs többszörös regisztráció.";
-  } catch (error) {
-    multiRegistrationStatus.textContent = error instanceof Error ? error.message : "Betöltési hiba.";
-  }
-}
-
-function renderCollisions() {
-  const visible = collisions.filter((collision) => {
-    if (collisionReasonFilter.value === "to_decide") return !collision.resolution;
-    return !collisionReasonFilter.value || collision.reasons.includes(collisionReasonFilter.value);
+function renderReviews() {
+  const filter = $('#review-filter').value;
+  const term = $('#review-search').value.toLocaleLowerCase('hu');
+  const visible = reviews.filter(r => {
+    const matches = filter === 'to_decide' ? r.to_decide : filter === 'kept_separate' ? r.separations.length > 0 : !filter || r.reasons.includes(filter);
+    return matches && r.members.some(m => `${m.athlete_id} ${m.flow_id} ${m.sources.map(s => s.name).join(' ')}`.toLocaleLowerCase('hu').includes(term));
   });
-  collisionCandidates.replaceChildren(...visible.map(renderCollision));
-  const unresolved = visible.filter((collision) => !collision.resolution).length;
-  collisionStatus.textContent = `${visible.length} / ${collisions.length} kockázatos összevonás, ${unresolved} döntés nélkül.`;
+  $('#review-status').textContent = `${visible.length} / ${reviews.length} eset · ${visible.filter(r => r.to_decide).length} to-decide`;
+  $('#review-candidates').replaceChildren(...visible.map(renderReview));
 }
 
-async function loadCollisions() {
-  try {
-    const response = await fetch("/api/admin/collisions?year=2026", { cache: "no-store" });
-    if (!response.ok) throw new Error("Az ütközéseket nem sikerült betölteni.");
-    const data = await response.json();
-    collisions = data.collisions;
-    renderCollisions();
-  } catch (error) {
-    collisionStatus.textContent = error instanceof Error ? error.message : "Betöltési hiba.";
-  }
+async function loadAll() {
+  const [cats, cases] = await Promise.all([api('year-categories'), api('registration-reviews')]);
+  athletes = cats.athletes;
+  reviews = cases.cases;
+  warnings(cases);
+  renderCategories();
+  renderReviews();
 }
 
 function activateTab() {
-  const active = ["#multi-registration", "#collision"].includes(location.hash)
-    ? location.hash.slice(1)
-    : "categories";
-  for (const tab of tabs) {
-    const selected = tab.id === `${active}-tab`;
-    tab.setAttribute("aria-selected", String(selected));
-    tab.tabIndex = selected ? 0 : -1;
+  // Old collision links now lead to the consolidated multi-reg workspace.
+  const active = ['#collision', '#multi-registration'].includes(location.hash) ? 'multi-registration' : 'categories';
+  for (const name of ['categories', 'multi-registration']) {
+    $(`#${name}-panel`).hidden = name !== active;
+    const tab = $(`#${name}-tab`);
+    if (name === active) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
   }
-  for (const panel of panels) panel.hidden = panel.id !== `${active}-panel`;
 }
-
-issueFilter.addEventListener("change", renderCandidates);
-collisionReasonFilter.addEventListener("change", renderCollisions);
-window.addEventListener("hashchange", activateTab);
+for (const id of ['category-search', 'category-filter']) $(`#${id}`).addEventListener('input', renderCategories);
+for (const id of ['review-search', 'review-filter']) $(`#${id}`).addEventListener('input', renderReviews);
+$('#refresh-candidates').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  $('#review-status').textContent = 'Jelöltek frissítése…';
+  try {
+    const data = await api('registration-reviews/refresh', {});
+    reviews = data.cases;
+    warnings(data);
+    renderReviews();
+  } catch (error) { $('#review-status').textContent = error.message; }
+  finally { button.disabled = false; }
+});
+window.addEventListener('hashchange', activateTab);
 activateTab();
-loadCandidates();
-loadMultiRegistrations();
-loadCollisions();
+loadAll().catch(error => { $('#admin-warning').textContent = error.message; });

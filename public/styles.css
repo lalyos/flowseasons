@@ -175,7 +175,7 @@ h1 span {
   text-decoration: none;
 }
 
-.admin-tabs a[aria-selected="true"] {
+.admin-tabs a[aria-current="page"] {
   color: var(--ink);
   background: var(--accent);
 }
@@ -192,7 +192,8 @@ h1 span {
   font-weight: 700;
 }
 
-.admin-filter select {
+.admin-filter select,
+.admin-filter input[type="search"] {
   width: min(100%, 20rem);
   min-height: 2.75rem;
   padding: 0.55rem 0.75rem;
@@ -293,6 +294,30 @@ h1 span {
   background: var(--surface);
 }
 
+.review-assignments,
+.review-categories,
+.review-choices {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.review-assignment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.review-assignment .admin-filter {
+  flex: 1;
+  margin: 0;
+}
+
+.review-assignment input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
 .admin-category-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -331,6 +356,7 @@ h1 span {
 
 .admin-save:focus-visible,
 .admin-filter select:focus-visible,
+.admin-filter input[type="search"]:focus-visible,
 .admin-category-form select:focus-visible {
   outline: 3px solid var(--accent-dark);
   outline-offset: 2px;

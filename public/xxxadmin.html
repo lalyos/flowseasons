@@ -4,55 +4,56 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#fdf7e8" />
-    <title>Flow Seasons 2026 — Kategóriák kezelése</title>
+    <title>Flow Seasons 2026 — Admin</title>
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/xxxadmin.js"></script>
   </head>
   <body>
     <main class="page">
       <header class="page-header">
-        <h1>Éves kategóriák</h1>
-        <p>Az itt kiválasztott kategória a Total eredményben lesz használva.</p>
+        <h1>Flow Seasons — Admin</h1>
+        <p>Az admin döntések csak a Total eredményt módosítják, a forráseredményeket nem.</p>
       </header>
-
-      <nav class="admin-tabs" role="tablist" aria-label="Admin nézetek">
-        <a id="categories-tab" href="#categories" role="tab" aria-controls="categories-panel">multi-cat</a>
-        <a id="multi-registration-tab" href="#multi-registration" role="tab" aria-controls="multi-registration-panel">multi-reg</a>
-        <a id="collision-tab" href="#collision" role="tab" aria-controls="collision-panel">collision</a>
+      <nav class="admin-tabs" aria-label="Admin nézetek">
+        <a id="categories-tab" href="#categories" aria-controls="categories-panel">Category change</a>
+        <a id="multi-registration-tab" href="#multi-registration" aria-controls="multi-registration-panel">multi-reg</a>
       </nav>
-
-      <section id="categories-panel" role="tabpanel" aria-labelledby="categories-tab">
-        <p id="admin-status" class="message" role="status" aria-live="polite">Kategóriaütközések betöltése…</p>
-        <label class="admin-filter" for="admin-issue-filter">
-          Probléma típusa
-          <select id="admin-issue-filter">
+      <p id="admin-warning" class="message" role="status"></p>
+      <section id="categories-panel" aria-labelledby="categories-tab">
+        <label class="admin-filter">Sportoló keresése
+          <input id="category-search" type="search" placeholder="Név, Flow ID vagy VL ID" />
+        </label>
+        <label class="admin-filter">Szűrés
+          <select id="category-filter">
             <option value="">mind</option>
-            <option value="category_change">kategóriaváltás</option>
-            <option value="identity_review">id-problem</option>
+            <option value="category_change">kategóriaváltás — azonos VL ID</option>
+            <option value="assignment_mismatch">assignment mismatch</option>
           </select>
         </label>
-        <section id="admin-candidates" class="admin-candidates" aria-label="Több kategóriájú sportolók"></section>
+        <p id="category-status" class="message" role="status" aria-live="polite"></p>
+        <section id="category-candidates" class="admin-candidates" aria-label="Éves kategóriák"></section>
       </section>
-
-      <section id="multi-registration-panel" role="tabpanel" aria-labelledby="multi-registration-tab" hidden>
-        <p id="multi-registration-status" class="message" role="status" aria-live="polite">Többszörös regisztrációk betöltése…</p>
-        <section id="multi-registration-candidates" class="admin-candidates" aria-label="Többszörös regisztrációk"></section>
-      </section>
-
-      <section id="collision-panel" role="tabpanel" aria-labelledby="collision-tab" hidden>
-        <p id="collision-status" class="message" role="status" aria-live="polite">Ütközések betöltése…</p>
-        <label class="admin-filter" for="collision-reason-filter">
-          Címke
-          <select id="collision-reason-filter">
+      <section id="multi-registration-panel" aria-labelledby="multi-registration-tab" hidden>
+        <button id="refresh-candidates" class="admin-save" type="button">Refresh candidates</button>
+        <p>Új vagy frissített eredmény feltöltése után frissítsd a jelölteket. Ez nem módosítja az összerendeléseket vagy a pontokat.</p>
+        <label class="admin-filter">Sportoló keresése
+          <input id="review-search" type="search" placeholder="Név, Flow ID vagy VL ID" />
+        </label>
+        <label class="admin-filter">Szűrés
+          <select id="review-filter">
             <option value="">mind</option>
             <option value="to_decide">to-decide</option>
+            <option value="potential_match">potential match</option>
             <option value="same_event_collision">same-event collision</option>
+            <option value="overlapping_event">overlapping event — külön Flow ID-k is</option>
             <option value="score_disparity">2× score difference</option>
             <option value="top_ten">top-10 impact</option>
+            <option value="merged">merged</option>
+            <option value="kept_separate">kept separate</option>
           </select>
         </label>
-        <section id="collision-candidates" class="admin-candidates" aria-label="Kockázatos összevonások"></section>
+        <p id="review-status" class="message" role="status" aria-live="polite"></p>
+        <section id="review-candidates" class="admin-candidates" aria-label="Regisztrációk áttekintése"></section>
       </section>
     </main>
   </body>
