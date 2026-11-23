@@ -2,7 +2,7 @@
 
 ## Status
 
-All 66 candidates below were applied to the **local database only** after the organizer approved the complete candidate set. The Winter active snapshot is `751` / `9344`. Production has not been changed. Similar names remain review signals, not proof of identity.
+All 66 candidates below were applied locally and subsequently to production after the organizer approved the complete candidate set and explicitly requested production application. The Winter active snapshot is `751` / `9344`. Similar names remain review signals, not proof of identity.
 
 ## Method
 
@@ -34,6 +34,16 @@ Compared Winter ranking and startlist IDs not seen in Spring–Autumn against bo
 - Total rows decreased from 530 to 485; category conflicts stayed at 27. The collision view now retains 54 cases (including earlier cases), versus 30 before these mappings.
 - Verified BUBB Ferenc (`flow-18492`) now includes Winter ID `25813` and has a best-three Total of 398.95.
 - These are replaceable current mappings, not immutable identity decisions.
+
+## Production application — 2026-11-23
+
+- Validated all 66 IDs and their source names against production's newer Winter snapshot (220 ranking rows).
+- Backed up production D1 to `/tmp/flow-prod-before-winter-mappings-20261123-083504.sql`.
+- Applied all 66 mappings and rebuilt Total in one atomic import; verified every assignment afterward. Source result rows were not changed.
+- Preserved existing destination Year categories, including HAVASI Gábor (`flow-18184`, Hobbi - Férfi) and BLISZKÓ Péter (`flow-6053`, Hobbi - Férfi), whose Winter source categories differ and remain available for category review.
+- Preserved all 23 saved collision decisions during mapping application. Refreshing the collision projection then reopened cases whose VL ID membership changed, as designed.
+- Verified 485 Total athletes, BUBB Ferenc at 398.95 with all four VL IDs in one collision table, and healthy production D1/R2 checks.
+- After refresh, production has 33 saved collision cases, 26 awaiting an admin decision.
 
 ## Candidates
 
